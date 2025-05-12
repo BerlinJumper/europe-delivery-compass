@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Check, FileText, Clock, PackagePlus } from 'lucide-react';
+import { Check, FileText, Clock, PackagePlus, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -20,6 +21,18 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
 
   return (
     <div className="w-full py-6">
+      <div className="flex items-center justify-between mb-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center gap-1"
+          onClick={() => window.location.href = '/'}
+        >
+          <Home className="h-4 w-4" />
+          Home
+        </Button>
+      </div>
+      
       <div className="flex items-center justify-center">
         <div className="w-full max-w-3xl flex items-center">
           {displaySteps.map((step, index) => {

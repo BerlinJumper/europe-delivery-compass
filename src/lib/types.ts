@@ -39,6 +39,8 @@ export interface NonPrescriptionItem {
     width: number;
     height: number;
   };
+  description: string;
+  image: string;
   imageUrl?: string;
 }
 

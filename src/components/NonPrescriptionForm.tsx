@@ -135,13 +135,15 @@ const NonPrescriptionForm: React.FC<NonPrescriptionFormProps> = ({
         
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <Input
-              placeholder="Search items..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-              icon={<Search className="h-4 w-4 opacity-70" />}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 opacity-70" />
+              <Input
+                placeholder="Search items..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="pl-9 max-w-sm"
+              />
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
