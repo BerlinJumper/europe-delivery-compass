@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Check, MapPin, FileText, Clock } from 'lucide-react';
+import { Check, FileText, Clock, PackagePlus } from 'lucide-react';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -10,19 +10,22 @@ interface StepIndicatorProps {
 
 const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }) => {
   const steps = [
-    { name: "Address", icon: MapPin },
     { name: "Prescription", icon: FileText },
+    { name: "Products", icon: PackagePlus },
     { name: "Delivery", icon: Clock },
   ];
+
+  // Adjust steps based on total steps
+  const displaySteps = totalSteps === 4 ? steps : steps.filter((_, index) => index !== 1);
 
   return (
     <div className="w-full py-6">
       <div className="flex items-center justify-center">
         <div className="w-full max-w-3xl flex items-center">
-          {steps.map((step, index) => {
+          {displaySteps.map((step, index) => {
             const StepIcon = step.icon;
-            const isActive = currentStep >= index + 1;
-            const isCompleted = currentStep > index + 1;
+            const isActive = currentStep >= index + 2; // +2 because currentStep starts at 2 now (after welcome/address)
+            const isCompleted = currentStep > index + 2;
             
             return (
               <React.Fragment key={index}>
@@ -47,11 +50,11 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
                     </span>
                   </div>
                 </div>
-                {index < steps.length - 1 && (
+                {index < displaySteps.length - 1 && (
                   <div 
                     className={cn(
                       "flex-1 border-t-2",
-                      isActive && currentStep > index + 1 ? "border-primary" : "border-muted"
+                      isActive && currentStep > index + 2 ? "border-primary" : "border-muted"
                     )} 
                   />
                 )}

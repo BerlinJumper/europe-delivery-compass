@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import StepIndicator from '@/components/StepIndicator';
@@ -21,17 +20,64 @@ const Index: React.FC = () => {
     deliveryEstimates: null,
   });
 
+  // Simulate default address for the user account
+  const defaultAddress: Address = {
+    street: "Hauptstraße 123",
+    city: "Berlin",
+    postalCode: "10115",
+    country: "Germany"
+  };
+
   const handleMedicationTypeSelect = (type: MedicationType) => {
     setState(prev => ({
       ...prev,
       medicationType: type,
-      currentStep: 1 // Move to address step
+      // Skip address step and go directly to medication selection
+      currentStep: type === 'prescription' || type === 'both' ? 2 : 3,
+      // Use default address from account
+      address: defaultAddress
     }));
     
     toast({
       title: `${type === 'both' ? 'Combined' : type === 'prescription' ? 'Prescription' : 'Non-prescription'} delivery selected`,
-      description: "Please enter your delivery address",
+      description: "Using your saved delivery address",
     });
+  };
+
+  const handleMedicationSearch = (query: string, isPrescription: boolean) => {
+    if (isPrescription) {
+      // Simulate finding a prescription medication
+      setState(prev => ({
+        ...prev,
+        medicationType: 'prescription',
+        currentStep: 2,
+        address: defaultAddress,
+        prescription: {
+          id: `PRX-${Math.floor(Math.random() * 10000)}`,
+          title: query,
+          description: 'Auto-filled from search',
+          weight: 100,
+          dimensions: {
+            length: 10,
+            width: 5,
+            height: 3,
+          },
+          urgent: false,
+          patientName: '',
+          insuranceCompany: '',
+          birthDate: '',
+          prescriptionFee: 7.55,
+        }
+      }));
+    } else {
+      // Go to non-prescription items with search filter
+      setState(prev => ({
+        ...prev,
+        medicationType: 'nonPrescription',
+        currentStep: 3,
+        address: defaultAddress
+      }));
+    }
   };
 
   const handleAddressSubmit = (submittedAddress: Address) => {
@@ -191,11 +237,11 @@ const Index: React.FC = () => {
       if (state.medicationType === 'both') {
         // If we're at prescription step and coming back from non-prescription, go back to address
         if (state.currentStep === 2 && state.nonPrescriptionItems) {
-          setState(prev => ({ ...prev, currentStep: 1 }));
+          setState(prev => ({ ...prev, currentStep: 0 }));
         }
         // If we're at non-prescription step and coming back from prescription, go back to address
         else if (state.currentStep === 3 && state.prescription) {
-          setState(prev => ({ ...prev, currentStep: 1 }));
+          setState(prev => ({ ...prev, currentStep: 0 }));
         }
         // Normal back
         else {
@@ -228,8 +274,8 @@ const Index: React.FC = () => {
   const getTotalSteps = () => {
     if (!state.medicationType) return 1; // Just the welcome screen
     
-    // Address + Items (Prescription or Non-prescription) + Delivery Options
-    return state.medicationType === 'both' ? 5 : 4;
+    // Skip address step
+    return state.medicationType === 'both' ? 4 : 3;
   };
 
   return (
@@ -240,7 +286,10 @@ const Index: React.FC = () => {
       
       <div className="mt-8">
         {state.currentStep === 0 && (
-          <WelcomeScreen onMedicationTypeSelect={handleMedicationTypeSelect} />
+          <WelcomeScreen 
+            onMedicationTypeSelect={handleMedicationTypeSelect} 
+            onMedicationSearch={handleMedicationSearch}
+          />
         )}
         
         {state.currentStep === 1 && (
@@ -251,7 +300,8 @@ const Index: React.FC = () => {
           (state.medicationType === 'prescription' || state.medicationType === 'both') && (
             <PrescriptionForm 
               onPrescriptionSubmit={handlePrescriptionSubmit} 
-              onBack={handleBack} 
+              onBack={handleBack}
+              initialData={state.prescription}
             />
           )
         )}
@@ -261,6 +311,7 @@ const Index: React.FC = () => {
             <NonPrescriptionForm 
               onNonPrescriptionSubmit={handleNonPrescriptionSubmit} 
               onBack={handleBack} 
+              showAllItems={true}
             />
           )
         )}
