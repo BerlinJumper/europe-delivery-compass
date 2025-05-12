@@ -1,205 +1,278 @@
 
-import React from 'react';
-import { DeliveryEstimate, Address, Prescription } from '@/lib/types';
+import React, { useEffect, useState } from 'react';
+import { Address, Prescription, DeliveryEstimate, NonPrescriptionItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { 
+  Car,
+  Check,
+  Package,
+  MapPin,
+  ArrowRight,
+} from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Clock, Check, X, Plane, Car, Wind, Thermometer, Euro } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface DeliveryComparisonProps {
   deliveryEstimates: DeliveryEstimate[];
   address: Address;
-  prescription: Prescription;
+  prescription?: Prescription | null;
+  nonPrescriptionItems?: NonPrescriptionItem[] | null;
   onBack: () => void;
   onReset: () => void;
 }
 
-const DeliveryComparison: React.FC<DeliveryComparisonProps> = ({
-  deliveryEstimates,
+const DeliveryComparison: React.FC<DeliveryComparisonProps> = ({ 
+  deliveryEstimates, 
   address,
   prescription,
+  nonPrescriptionItems,
   onBack,
-  onReset,
+  onReset 
 }) => {
-  const formatTime = (minutes: number): string => {
-    if (minutes < 60) {
-      return `${minutes} min`;
+  const [selectedDelivery, setSelectedDelivery] = useState<string | null>(
+    deliveryEstimates.find(est => est.recommended)?.method || null
+  );
+  
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  
+  // Find recommended delivery option
+  const recommendedOption = deliveryEstimates.find(est => est.recommended);
+  
+  // Calculate total cost
+  const calculateTotalCost = (deliveryMethod: string) => {
+    const deliveryCost = deliveryEstimates.find(est => est.method === deliveryMethod)?.cost || 0;
+    
+    let itemsCost = 0;
+    
+    // Add prescription fee if applicable
+    if (prescription) {
+      itemsCost += prescription.prescriptionFee || 0;
+    }
+    
+    // Add non-prescription items cost if applicable
+    if (nonPrescriptionItems && nonPrescriptionItems.length > 0) {
+      itemsCost += nonPrescriptionItems.reduce((sum, item) => sum + item.price, 0);
+    }
+    
+    return deliveryCost + itemsCost;
+  };
+  
+  const handleConfirmDelivery = () => {
+    if (!selectedDelivery) return;
+    
+    setIsConfirming(true);
+    
+    // Simulate API call to confirm delivery
+    setTimeout(() => {
+      setIsConfirmed(true);
+      setIsConfirming(false);
+    }, 1500);
+  };
+  
+  const formatAddressString = (address: Address) => {
+    return `${address.street}, ${address.city}, ${address.postalCode}, ${address.country}`;
+  };
+
+  // Get weather condition icon based on values
+  const getWeatherIcon = (estimate: DeliveryEstimate) => {
+    if (!estimate.weatherCondition) return null;
+    
+    const { windSpeed, precipitation } = estimate.weatherCondition;
+    
+    if (windSpeed > 25) {
+      return '💨'; // Windy
+    } else if (precipitation > 15) {
+      return '🌧️'; // Rainy
     } else {
-      const hours = Math.floor(minutes / 60);
-      const remainingMinutes = minutes % 60;
-      return `${hours}h ${remainingMinutes > 0 ? `${remainingMinutes}m` : ''}`;
+      return '☀️'; // Sunny
     }
   };
-
-  const formatCost = (euros: number): string => {
-    return `€${euros.toFixed(2)}`;
-  };
-
-  const getDeliveryIcon = (method: "drone" | "car") => {
-    return method === "drone" ? (
-      <Plane className="h-5 w-5" />
-    ) : (
-      <Car className="h-5 w-5" />
-    );
-  };
-
-  return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-muted/50">
-          <CardTitle className="text-xl flex items-center">
-            <Clock className="h-5 w-5 mr-2" />
-            Delivery Options
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {deliveryEstimates.map((estimate, index) => {
-              const isRecommended = estimate.recommended;
-              
-              return (
-                <Card 
-                  key={index}
-                  className={cn(
-                    "border-2 transition-all duration-200 relative overflow-hidden",
-                    isRecommended ? `border-delivery-${estimate.method} shadow-lg` : "border-border"
-                  )}
-                >
-                  {isRecommended && (
-                    <div className="absolute top-0 right-0">
-                      <div className={`bg-delivery-${estimate.method} text-white text-xs py-1 px-3 rounded-bl-md`}>
-                        Recommended
-                      </div>
-                    </div>
-                  )}
-                  
-                  <CardHeader className={cn(
-                    "pb-2",
-                    `bg-delivery-${estimate.method}/10`
-                  )}>
-                    <CardTitle className="text-lg flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className={cn(
-                          "p-2 rounded-full mr-2",
-                          `bg-delivery-${estimate.method}/20 text-delivery-${estimate.method}`
-                        )}>
-                          {getDeliveryIcon(estimate.method)}
-                        </div>
-                        <span className="capitalize">{estimate.method} Delivery</span>
-                      </div>
-                      
-                      {estimate.weatherSuitable ? (
-                        <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                          <Check className="h-3 w-3 mr-1" /> Suitable
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-yellow-50 text-yellow-600 border-yellow-200">
-                          <X className="h-3 w-3 mr-1" /> Weather Issues
-                        </Badge>
-                      )}
-                    </CardTitle>
-                  </CardHeader>
-                  
-                  <CardContent className="pt-4">
-                    <div className="grid grid-cols-2 gap-y-4">
-                      <div className="flex flex-col">
-                        <span className="text-sm text-muted-foreground">Delivery Time</span>
-                        <span className="text-lg font-semibold">{formatTime(estimate.time)}</span>
-                      </div>
-                      
-                      <div className="flex flex-col">
-                        <span className="text-sm text-muted-foreground">Cost</span>
-                        <span className="text-lg font-semibold">{formatCost(estimate.cost)}</span>
-                      </div>
-                      
-                      <div className="flex flex-col">
-                        <span className="text-sm text-muted-foreground">Distance</span>
-                        <span className="font-medium">{estimate.distance} km</span>
-                      </div>
-                      
-                      <div className="flex flex-col">
-                        <span className="text-sm text-muted-foreground">Weather</span>
-                        <div className="flex items-center space-x-2">
-                          <Thermometer className="h-4 w-4 text-muted-foreground" />
-                          <span>{estimate.weatherCondition?.temperature}°C</span>
-                          <Wind className="h-4 w-4 text-muted-foreground" />
-                          <span>{estimate.weatherCondition?.windSpeed} km/h</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Button className={cn(
-                      "w-full mt-4",
-                      isRecommended 
-                        ? estimate.method === "drone" 
-                          ? "bg-delivery-drone hover:bg-delivery-drone/90" 
-                          : "bg-delivery-car hover:bg-delivery-car/90"
-                        : "bg-muted text-muted-foreground hover:bg-muted/90"
-                    )}>
-                      {isRecommended ? "Select This Option" : "Choose Anyway"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              );
-            })}
+  
+  if (isConfirmed) {
+    return (
+      <Card className="w-full max-w-xl mx-auto">
+        <CardContent className="p-6 text-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Check className="h-8 w-8 text-green-600" />
           </div>
           
-          <Separator className="my-6" />
+          <h2 className="text-2xl font-bold mb-2">Delivery Confirmed!</h2>
+          <p className="text-muted-foreground mb-4">
+            Your {prescription ? 'medication' : 'items'} will be delivered via {selectedDelivery} to your address
+          </p>
           
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Delivery Summary</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Delivery Address:</p>
-                <p className="font-medium">{address.street}</p>
-                <p className="font-medium">
-                  {address.postalCode} {address.city}, {address.country}
-                </p>
+          <div className="bg-muted/50 p-4 rounded-lg mb-4 text-left">
+            <div className="flex items-start gap-2 mb-2">
+              <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium">Delivery Address</p>
+                <p className="text-sm text-muted-foreground">{formatAddressString(address)}</p>
               </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">Prescription:</p>
-                <p className="font-medium">{prescription.title}</p>
-                <p className="text-sm">{prescription.description}</p>
-                <div className="flex items-center space-x-4 text-sm">
-                  <span>{prescription.weight}g</span>
-                  <span>
-                    {prescription.dimensions.length}×
-                    {prescription.dimensions.width}×
-                    {prescription.dimensions.height} cm
-                  </span>
-                  {prescription.urgent && (
-                    <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200">
-                      Urgent
-                    </Badge>
-                  )}
-                </div>
+            </div>
+            
+            <div className="flex items-start gap-2">
+              <Package className="h-5 w-5 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium">Estimated Delivery Time</p>
+                <p className="text-sm text-muted-foreground">
+                  {deliveryEstimates.find(est => est.method === selectedDelivery)?.time} minutes
+                </p>
               </div>
             </div>
           </div>
           
-          <div className="flex justify-between pt-6">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onBack}
-            >
-              Back
-            </Button>
-            
-            <Button 
-              variant="outline" 
-              onClick={onReset}
-            >
-              Start Over
-            </Button>
-          </div>
+          <Button onClick={onReset} className="w-full">
+            Start New Delivery Request
+          </Button>
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+  
+  return (
+    <Card className="w-full max-w-3xl mx-auto">
+      <CardContent className="p-6">
+        <h2 className="text-xl font-semibold text-center mb-6">Delivery Options</h2>
+        
+        <div className="mb-6 p-4 rounded-lg bg-muted/30">
+          <div className="flex items-start gap-2 mb-2">
+            <MapPin className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">Delivery to:</p>
+              <p className="text-sm text-muted-foreground">{formatAddressString(address)}</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-2">
+            <Package className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">Items:</p>
+              <ul className="text-sm text-muted-foreground list-disc ml-4">
+                {prescription && (
+                  <li key={prescription.id}>{prescription.title}</li>
+                )}
+                {nonPrescriptionItems && nonPrescriptionItems.map((item, index) => (
+                  <li key={`${item.id}-${index}`}>{item.name}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <RadioGroup 
+          value={selectedDelivery || ""} 
+          onValueChange={setSelectedDelivery}
+          className="space-y-4"
+        >
+          {deliveryEstimates.map((estimate) => {
+            const isRecommended = estimate.recommended;
+            const totalCost = calculateTotalCost(estimate.method);
+            
+            return (
+              <div key={estimate.method} className={`rounded-lg border p-4 ${isRecommended ? 'border-primary' : ''}`}>
+                <div className="flex justify-between items-start">
+                  <Label 
+                    htmlFor={estimate.method}
+                    className="flex items-start gap-2 cursor-pointer w-full"
+                  >
+                    <RadioGroupItem 
+                      value={estimate.method} 
+                      id={estimate.method}
+                      className="mt-1" 
+                    />
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {estimate.method === 'drone' ? (
+                            <>
+                              <span className="text-xl" role="img" aria-label="Drone">🚁</span>
+                              <h3 className="font-medium">Drone Delivery</h3>
+                            </>
+                          ) : (
+                            <>
+                              <Car className="h-5 w-5" />
+                              <h3 className="font-medium">Car Delivery</h3>
+                            </>
+                          )}
+                          
+                          {isRecommended && (
+                            <Badge variant="outline" className="ml-2 border-primary text-primary">
+                              Recommended
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-x-8 gap-y-2 mt-4">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Delivery time</p>
+                          <p className="font-medium">{estimate.time} minutes</p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm text-muted-foreground">Distance</p>
+                          <p className="font-medium">{estimate.distance?.toFixed(2) || "N/A"} km</p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm text-muted-foreground">Weather</p>
+                          <p className="font-medium flex items-center">
+                            {getWeatherIcon(estimate)}
+                            <span className="ml-1">
+                              {estimate.weatherSuitable ? "Suitable" : "Not ideal"}
+                            </span>
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm text-muted-foreground">Delivery fee</p>
+                          <p className="font-medium">€{estimate.cost.toFixed(2)}</p>
+                        </div>
+                      </div>
+                      
+                      {estimate.method === 'drone' && !estimate.weatherSuitable && (
+                        <div className="mt-2 text-sm text-yellow-600 bg-yellow-50 p-2 rounded">
+                          ⚠️ Weather conditions may affect drone delivery speed
+                        </div>
+                      )}
+                    </div>
+                  </Label>
+                </div>
+              </div>
+            );
+          })}
+        </RadioGroup>
+        
+        <div className="mt-6 pt-4 border-t">
+          <div className="flex justify-between mb-4">
+            <span className="font-medium">Total Cost:</span>
+            <span className="font-semibold">
+              €{selectedDelivery ? calculateTotalCost(selectedDelivery).toFixed(2) : '0.00'}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+      
+      <CardFooter className="px-6 pb-6 pt-0 flex justify-between">
+        <Button 
+          variant="outline"
+          onClick={onBack}
+        >
+          Back
+        </Button>
+        
+        <Button 
+          disabled={!selectedDelivery || isConfirming} 
+          onClick={handleConfirmDelivery}
+        >
+          {isConfirming ? "Processing..." : "Confirm Delivery"}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 
