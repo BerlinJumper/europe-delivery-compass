@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import StepIndicator from '@/components/StepIndicator';
@@ -37,7 +38,8 @@ const Index: React.FC = () => {
     setState(prev => ({
       ...prev,
       address: submittedAddress,
-      currentStep: 2
+      // If non-prescription type, go directly to step 3
+      currentStep: prev.medicationType === 'nonPrescription' ? 3 : 2
     }));
     
     toast({

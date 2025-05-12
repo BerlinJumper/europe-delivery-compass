@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Address, DeliveryEstimate, Prescription, NonPrescriptionItem } from '@/lib/types';
-import { Car, Drone, Clock, Wind, Thermometer, CloudRain, Eye, MapPin, Package, Check } from 'lucide-react';
+import { Car, Clock, Wind, Thermometer, CloudRain, Eye, MapPin, Package, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 
@@ -91,7 +92,7 @@ const DeliveryComparison: React.FC<DeliveryComparisonProps> = ({
               <div className="flex justify-between items-start">
                 <div className="flex items-center">
                   {estimate.method === 'drone' ? (
-                    <Drone className="h-6 w-6 text-primary mr-2" />
+                    <Package className="h-6 w-6 text-primary mr-2" />
                   ) : (
                     <Car className="h-6 w-6 text-primary mr-2" />
                   )}
@@ -105,7 +106,7 @@ const DeliveryComparison: React.FC<DeliveryComparisonProps> = ({
                       )}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {estimate.distance} km distance
+                      {estimate.distance?.toFixed(2)} km distance
                     </p>
                   </div>
                 </div>
