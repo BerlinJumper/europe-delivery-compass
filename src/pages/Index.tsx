@@ -8,6 +8,11 @@ import DeliveryComparison from '@/components/DeliveryComparison';
 import WelcomeScreen from '@/components/WelcomeScreen';
 import { Address, Prescription, DeliveryEstimate, NonPrescriptionItem, MedicationType, AppState } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { FileText, Pill, PackagePlus } from 'lucide-react';
 
 const Index: React.FC = () => {
   const { toast } = useToast();
@@ -19,6 +24,10 @@ const Index: React.FC = () => {
     nonPrescriptionItems: null,
     deliveryEstimates: null,
   });
+
+  // Store search query when user searches from welcome screen
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
+  const [isFromCamera, setIsFromCamera] = useState(false);
 
   // Simulate default address for the user account
   const defaultAddress: Address = {
@@ -32,7 +41,7 @@ const Index: React.FC = () => {
     setState(prev => ({
       ...prev,
       medicationType: type,
-      // Skip address step and go directly to medication selection
+      // Go to appropriate medication selection screen
       currentStep: type === 'prescription' || type === 'both' ? 2 : 3,
       // Use default address from account
       address: defaultAddress
@@ -45,17 +54,36 @@ const Index: React.FC = () => {
   };
 
   const handleMedicationSearch = (query: string, isPrescription: boolean) => {
-    if (isPrescription) {
-      // Simulate finding a prescription medication
+    setSearchQuery(query);
+    setIsFromCamera(isPrescription);
+    
+    // Move to medication type selection step
+    setState(prev => ({
+      ...prev,
+      currentStep: 1, // Go to medication type selection
+      address: defaultAddress
+    }));
+  };
+
+  // Handle medication type selection after search
+  const handleTypeSelectionAfterSearch = (type: MedicationType) => {
+    setState(prev => ({
+      ...prev,
+      medicationType: type,
+      currentStep: type === 'prescription' || type === 'both' ? 2 : 3,
+      // Use the saved address
+      address: defaultAddress
+    }));
+
+    // If user searched for a prescription and selected prescription type,
+    // pre-fill the prescription data
+    if (isFromCamera && (type === 'prescription' || type === 'both')) {
       setState(prev => ({
         ...prev,
-        medicationType: 'prescription',
-        currentStep: 2,
-        address: defaultAddress,
         prescription: {
           id: `PRX-${Math.floor(Math.random() * 10000)}`,
-          title: query,
-          description: 'Auto-filled from search',
+          title: searchQuery || '',
+          description: 'Auto-filled from prescription image',
           weight: 100,
           dimensions: {
             length: 10,
@@ -69,15 +97,12 @@ const Index: React.FC = () => {
           prescriptionFee: 7.55,
         }
       }));
-    } else {
-      // Go to non-prescription items with search filter
-      setState(prev => ({
-        ...prev,
-        medicationType: 'nonPrescription',
-        currentStep: 3,
-        address: defaultAddress
-      }));
     }
+    
+    toast({
+      title: `${type === 'both' ? 'Combined' : type === 'prescription' ? 'Prescription' : 'Non-prescription'} delivery selected`,
+      description: searchQuery ? `Searching for "${searchQuery}"` : "Using your saved delivery address",
+    });
   };
 
   const handleAddressSubmit = (submittedAddress: Address) => {
@@ -278,6 +303,90 @@ const Index: React.FC = () => {
     return state.medicationType === 'both' ? 4 : 3;
   };
 
+  // Render medication type selection screen after search
+  const renderMedicationTypeSelection = () => {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="p-6">
+          <div className="space-y-6">
+            <h3 className="text-xl font-medium text-center mb-2">
+              Select Medication Type for "{searchQuery}"
+            </h3>
+            
+            <RadioGroup 
+              onValueChange={(value) => handleTypeSelectionAfterSearch(value as MedicationType)}
+              className="grid grid-cols-1 gap-4 pt-2"
+            >
+              <Label 
+                htmlFor="prescription" 
+                className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <RadioGroupItem value="prescription" id="prescription" className="mt-1" />
+                <div className="ml-3 flex-1">
+                  <div className="flex items-center">
+                    <FileText className="h-5 w-5 text-primary mr-2" />
+                    <span className="font-medium">Prescription Medication</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Medications that require a doctor's prescription
+                  </p>
+                </div>
+              </Label>
+              
+              <Label 
+                htmlFor="nonPrescription"
+                className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <RadioGroupItem value="nonPrescription" id="nonPrescription" className="mt-1" />
+                <div className="ml-3 flex-1">
+                  <div className="flex items-center">
+                    <Pill className="h-5 w-5 text-primary mr-2" />
+                    <span className="font-medium">Non-Prescription Medication</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Over-the-counter medications and healthcare products
+                  </p>
+                </div>
+              </Label>
+              
+              <Label 
+                htmlFor="both"
+                className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+              >
+                <RadioGroupItem value="both" id="both" className="mt-1" />
+                <div className="ml-3 flex-1">
+                  <div className="flex items-center">
+                    <PackagePlus className="h-5 w-5 text-primary mr-2" />
+                    <span className="font-medium">Both</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    I need both prescription and non-prescription items
+                  </p>
+                </div>
+              </Label>
+            </RadioGroup>
+            
+            <div className="flex justify-between gap-4 pt-4">
+              <Button 
+                variant="outline"
+                onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
+              >
+                Back
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => handleMedicationTypeSelect('nonPrescription')}
+              >
+                Browse All Products
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Layout>
       {state.currentStep > 0 && (
@@ -291,10 +400,8 @@ const Index: React.FC = () => {
             onMedicationSearch={handleMedicationSearch}
           />
         )}
-        
-        {state.currentStep === 1 && (
-          <AddressForm onAddressSubmit={handleAddressSubmit} />
-        )}
+
+        {state.currentStep === 1 && renderMedicationTypeSelection()}
         
         {state.currentStep === 2 && (
           (state.medicationType === 'prescription' || state.medicationType === 'both') && (

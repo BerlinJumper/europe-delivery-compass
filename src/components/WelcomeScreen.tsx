@@ -2,11 +2,9 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { MedicationType } from '@/lib/types';
-import { PackagePlus, Pill, FileText, Search, Camera } from 'lucide-react';
+import { Search, Camera } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -17,21 +15,15 @@ interface WelcomeScreenProps {
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onMedicationTypeSelect, onMedicationSearch }) => {
   const { toast } = useToast();
-  const [selectedType, setSelectedType] = React.useState<MedicationType | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('search');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const handleContinue = () => {
-    if (selectedType) {
-      onMedicationTypeSelect(selectedType);
-    }
-  };
-
   const handleSearch = () => {
     if (searchQuery.trim()) {
-      const isPrescription = selectedType === 'prescription' || selectedType === 'both';
-      onMedicationSearch(searchQuery, isPrescription);
+      // We don't know if it's prescription yet, so default to non-prescription
+      // The type will be selected in a later step
+      onMedicationSearch(searchQuery, false);
     } else {
       toast({
         title: "Search query empty",
@@ -79,133 +71,80 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onMedicationTypeSelect, o
         </p>
         
         <div className="space-y-6">
-          <h3 className="text-lg font-medium">What type of medication do you need?</h3>
-          
-          <RadioGroup 
-            value={selectedType || ""} 
-            onValueChange={(value) => setSelectedType(value as MedicationType)}
-            className="grid grid-cols-1 gap-4 pt-2"
-          >
-            <Label 
-              htmlFor="prescription" 
-              className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-            >
-              <RadioGroupItem value="prescription" id="prescription" className="mt-1" />
-              <div className="ml-3 flex-1">
-                <div className="flex items-center">
-                  <FileText className="h-5 w-5 text-primary mr-2" />
-                  <span className="font-medium">Prescription Medication</span>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="search" className="flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Search
+              </TabsTrigger>
+              <TabsTrigger value="camera" className="flex items-center gap-2">
+                <Camera className="h-4 w-4" />
+                Camera
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="search" className="mt-4">
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 opacity-70" />
+                  <Input
+                    placeholder="Search for medication..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-9"
+                  />
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Medications that require a doctor's prescription
-                </p>
+                <Button onClick={handleSearch}>Search</Button>
               </div>
-            </Label>
-            
-            <Label 
-              htmlFor="nonPrescription"
-              className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-            >
-              <RadioGroupItem value="nonPrescription" id="nonPrescription" className="mt-1" />
-              <div className="ml-3 flex-1">
-                <div className="flex items-center">
-                  <Pill className="h-5 w-5 text-primary mr-2" />
-                  <span className="font-medium">Non-Prescription Medication</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Over-the-counter medications and healthcare products
-                </p>
-              </div>
-            </Label>
-            
-            <Label 
-              htmlFor="both"
-              className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
-            >
-              <RadioGroupItem value="both" id="both" className="mt-1" />
-              <div className="ml-3 flex-1">
-                <div className="flex items-center">
-                  <PackagePlus className="h-5 w-5 text-primary mr-2" />
-                  <span className="font-medium">Both</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  I need both prescription and non-prescription items
-                </p>
-              </div>
-            </Label>
-          </RadioGroup>
-          
-          {selectedType && (
-            <div className="mt-6 border-t pt-6">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="search" className="flex items-center gap-2">
-                    <Search className="h-4 w-4" />
-                    Search
-                  </TabsTrigger>
-                  <TabsTrigger value="camera" className="flex items-center gap-2">
-                    <Camera className="h-4 w-4" />
-                    Camera
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="search" className="mt-4">
-                  <div className="flex gap-2">
+            </TabsContent>
+            <TabsContent value="camera" className="mt-4">
+              <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                {imagePreview ? (
+                  <div>
+                    <img src={imagePreview} alt="Prescription" className="max-h-48 mx-auto" />
+                    <div className="flex gap-2 justify-center mt-4">
+                      <Button 
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setImagePreview(null)}
+                      >
+                        Retake Photo
+                      </Button>
+                      <Button 
+                        size="sm"
+                        onClick={() => {
+                          // Use the recognized medication
+                          if (searchQuery) {
+                            onMedicationSearch(searchQuery, true);
+                          }
+                        }}
+                      >
+                        Use This Prescription
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-muted-foreground mb-2">Take a photo of your prescription</p>
                     <Input
-                      placeholder="Search for medication..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="flex-1"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageCapture}
+                      className="max-w-sm mx-auto"
                     />
-                    <Button onClick={handleSearch}>Search</Button>
                   </div>
-                </TabsContent>
-                <TabsContent value="camera" className="mt-4">
-                  <div className="border-2 border-dashed rounded-lg p-4 text-center">
-                    {imagePreview ? (
-                      <div>
-                        <img src={imagePreview} alt="Prescription" className="max-h-48 mx-auto" />
-                        <Button 
-                          variant="outline"
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => setImagePreview(null)}
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-muted-foreground mb-2">Take a photo of your prescription</p>
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          capture="environment"
-                          onChange={handleImageCapture}
-                          className="max-w-sm mx-auto"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </div>
-          )}
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
           
-          <div className="flex justify-between gap-4">
+          <div className="flex justify-center mt-6">
             <Button 
               variant="outline"
               onClick={() => onMedicationTypeSelect('nonPrescription')}
-              className="flex-1"
+              className="w-full max-w-xs"
             >
               Browse All Products
-            </Button>
-            
-            <Button 
-              onClick={handleContinue} 
-              disabled={!selectedType} 
-              className="flex-1"
-            >
-              Continue
             </Button>
           </div>
         </div>
