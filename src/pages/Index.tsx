@@ -134,6 +134,10 @@ const Index: React.FC = () => {
       const windSpeed = Math.floor(Math.random() * 30);
       const droneWeatherSuitable = windSpeed < 20;
       
+      // Generate distances and round to 2 decimal places
+      const droneDistance = parseFloat((2.5 + Math.random() * 1.5).toFixed(2));
+      const carDistance = parseFloat((5 + Math.random() * 3).toFixed(2));
+      
       // Mock data for delivery estimates
       const estimates: DeliveryEstimate[] = [
         {
@@ -148,7 +152,7 @@ const Index: React.FC = () => {
             precipitation: Math.random() * 30,
             visibility: 80 + Math.random() * 20
           },
-          distance: 2.5 + Math.random() * 1.5
+          distance: droneDistance
         },
         {
           method: "car",
@@ -162,7 +166,7 @@ const Index: React.FC = () => {
             precipitation: Math.random() * 30,
             visibility: 80 + Math.random() * 20
           },
-          distance: 5 + Math.random() * 3
+          distance: carDistance
         }
       ];
       
