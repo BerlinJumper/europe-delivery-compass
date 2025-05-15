@@ -5,6 +5,7 @@ import PrescriptionForm from '@/components/PrescriptionForm';
 import NonPrescriptionForm from '@/components/NonPrescriptionForm';
 import DeliveryComparison from '@/components/DeliveryComparison';
 import WelcomeScreen from '@/components/WelcomeScreen';
+import CardScanningScreen from '@/components/CardScanningScreen';
 import DeliveryAddressDisplay from '@/components/DeliveryAddressDisplay';
 import { Address, Prescription, DeliveryEstimate, NonPrescriptionItem, MedicationType, AppState } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { FileText, Pill, PackagePlus } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const Index: React.FC = () => {
   const { toast } = useToast();
@@ -29,6 +29,9 @@ const Index: React.FC = () => {
   // Store search query when user searches from welcome screen
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [isFromCamera, setIsFromCamera] = useState(false);
+  
+  // Store card details from card scanning screen
+  const [cardDetails, setCardDetails] = useState<any>(null);
 
   // Simulate default address for the user account - now we'll start with null
   const defaultAddress: Address | null = null;
@@ -37,8 +40,22 @@ const Index: React.FC = () => {
     setState(prev => ({
       ...prev,
       address: submittedAddress,
-      currentStep: 1 // Move to medication search step
+      currentStep: 1 // Move to card scanning step
     }));
+  };
+
+  const handleCardSubmit = (submittedCardDetails: any) => {
+    setCardDetails(submittedCardDetails);
+    setState(prev => ({
+      ...prev,
+      // Skip medication type selection, go directly to medication display
+      currentStep: 2
+    }));
+    
+    toast({
+      title: "Card processed",
+      description: "Your insurance card details have been processed successfully",
+    });
   };
 
   const handleMedicationTypeSelect = (type: MedicationType) => {
@@ -62,45 +79,8 @@ const Index: React.FC = () => {
     // Move to medication type selection step
     setState(prev => ({
       ...prev,
-      currentStep: 1, // Go to medication type selection
+      currentStep: 1, // Go to card scanning
     }));
-  };
-
-  const handleTypeSelectionAfterSearch = (type: MedicationType) => {
-    setState(prev => ({
-      ...prev,
-      medicationType: type,
-      currentStep: type === 'prescription' || type === 'both' ? 2 : 3,
-    }));
-
-    // If user searched for a prescription and selected prescription type,
-    // pre-fill the prescription data
-    if (isFromCamera && (type === 'prescription' || type === 'both')) {
-      setState(prev => ({
-        ...prev,
-        prescription: {
-          id: `PRX-${Math.floor(Math.random() * 10000)}`,
-          title: searchQuery || '',
-          description: 'Auto-filled from prescription image',
-          weight: 100,
-          dimensions: {
-            length: 10,
-            width: 5,
-            height: 3,
-          },
-          urgent: false,
-          patientName: '',
-          insuranceCompany: '',
-          birthDate: '',
-          prescriptionFee: 7.55,
-        }
-      }));
-    }
-    
-    toast({
-      title: `${type === 'both' ? 'Combined' : type === 'prescription' ? 'Prescription' : 'Non-prescription'} delivery selected`,
-      description: searchQuery ? `Searching for "${searchQuery}"` : "Using your saved delivery address",
-    });
   };
 
   const handlePrescriptionSubmit = (submittedPrescription: Prescription) => {
@@ -241,26 +221,26 @@ const Index: React.FC = () => {
   };
 
   const handleBack = () => {
-    // Fix back button functionality
     if (state.currentStep > 0) {
-      // For prescription or non-prescription steps, go back to medication type selection
-      if (state.currentStep === 2 || state.currentStep === 3) {
+      // For card scanning screen, go back to address entry
+      if (state.currentStep === 1) {
+        setState(prev => ({ ...prev, currentStep: 0 }));
+      }
+      // For prescription screen, go back to card scanning
+      else if (state.currentStep === 2) {
         setState(prev => ({ ...prev, currentStep: 1 }));
       }
-      // For delivery options, go back based on the medication type
-      else if (state.currentStep === 4) {
-        if (state.medicationType === 'both') {
-          // If both, go back to non-prescription form (the last one visited)
-          setState(prev => ({ ...prev, currentStep: 3 }));
-        } else if (state.medicationType === 'prescription') {
-          setState(prev => ({ ...prev, currentStep: 2 }));
-        } else {
-          setState(prev => ({ ...prev, currentStep: 3 }));
-        }
+      // For non-prescription, go back to prescription or card scanning
+      else if (state.currentStep === 3) {
+        setState(prev => ({ ...prev, currentStep: state.prescription ? 2 : 1 }));
       }
-      // For medication type selection, go back to welcome screen
-      else if (state.currentStep === 1) {
-        setState(prev => ({ ...prev, currentStep: 0 }));
+      // For delivery options, go back based on the previous screen
+      else if (state.currentStep === 4) {
+        if (state.nonPrescriptionItems) {
+          setState(prev => ({ ...prev, currentStep: 3 }));
+        } else {
+          setState(prev => ({ ...prev, currentStep: 2 }));
+        }
       }
     }
   };
@@ -274,6 +254,7 @@ const Index: React.FC = () => {
       nonPrescriptionItems: null,
       deliveryEstimates: null,
     });
+    setCardDetails(null);
     
     toast({
       title: "Starting over",
@@ -281,181 +262,9 @@ const Index: React.FC = () => {
     });
   };
 
-  // Get the total steps based on medication type
+  // Get the total steps based on the flow
   const getTotalSteps = () => {
-    if (!state.medicationType) return 1; // Just the welcome screen
-    
-    return state.medicationType === 'both' ? 4 : 3;
-  };
-
-  // Render medication type selection screen after search
-  const renderMedicationTypeSelection = () => {
-    return (
-      <Card className="w-full max-w-2xl mx-auto bg-white border-slate-200 shadow-sm">
-        <CardContent className="p-6">
-          {state.address && <DeliveryAddressDisplay address={state.address} />}
-          
-          <div className="space-y-6">
-            <h3 className="text-xl font-medium text-center mb-2 text-slate-800">
-              Select Medication Type {searchQuery ? `for "${searchQuery}"` : ""}
-            </h3>
-            
-            <RadioGroup 
-              onValueChange={(value) => handleTypeSelectionAfterSearch(value as MedicationType)}
-              className="grid grid-cols-1 gap-4 pt-2"
-            >
-              <Label 
-                htmlFor="prescription" 
-                className="flex items-start p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
-              >
-                <RadioGroupItem value="prescription" id="prescription" className="mt-1 text-slate-600 border-slate-400" />
-                <div className="ml-3 flex-1">
-                  <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-slate-600 mr-2" />
-                    <span className="font-medium text-slate-800">Prescription Medication</span>
-                  </div>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Medications that require a doctor's prescription
-                  </p>
-                </div>
-              </Label>
-              
-              <Label 
-                htmlFor="nonPrescription"
-                className="flex items-start p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
-              >
-                <RadioGroupItem value="nonPrescription" id="nonPrescription" className="mt-1 text-slate-600 border-slate-400" />
-                <div className="ml-3 flex-1">
-                  <div className="flex items-center">
-                    <Pill className="h-5 w-5 text-slate-600 mr-2" />
-                    <span className="font-medium text-slate-800">Non-Prescription Medication</span>
-                  </div>
-                  <p className="text-sm text-slate-600 mt-1">
-                    Over-the-counter medications and healthcare products
-                  </p>
-                </div>
-              </Label>
-              
-              <Label 
-                htmlFor="both"
-                className="flex items-start p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
-              >
-                <RadioGroupItem value="both" id="both" className="mt-1 text-slate-600 border-slate-400" />
-                <div className="ml-3 flex-1">
-                  <div className="flex items-center">
-                    <PackagePlus className="h-5 w-5 text-slate-600 mr-2" />
-                    <span className="font-medium text-slate-800">Both</span>
-                  </div>
-                  <p className="text-sm text-slate-600 mt-1">
-                    I need both prescription and non-prescription items
-                  </p>
-                </div>
-              </Label>
-            </RadioGroup>
-            
-            <div className="flex justify-between gap-4 pt-4">
-              <Button 
-                variant="outline"
-                onClick={handleBack}
-                className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
-              >
-                Back
-              </Button>
-              
-              <Button 
-                variant="outline"
-                onClick={() => handleMedicationTypeSelect('nonPrescription')}
-                className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
-              >
-                Browse All Products
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Modify the search screen content to show the address
-  const renderSearchScreen = () => {
-    return (
-      <Card className="w-full max-w-2xl mx-auto bg-white border-slate-200 shadow-sm">
-        <CardContent className="p-6">
-          {state.address && <DeliveryAddressDisplay address={state.address} />}
-          
-          <Tabs defaultValue="search" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-100">
-              <TabsTrigger value="search" className="data-[state=active]:bg-white">Search</TabsTrigger>
-              <TabsTrigger value="camera" className="data-[state=active]:bg-white">Camera</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="search">
-              <div className="space-y-6">
-                <h3 className="text-xl font-medium text-center mb-2 text-slate-800">
-                  Search for Medication
-                </h3>
-                
-                <input 
-                  type="text" 
-                  placeholder="Enter medication name or code" 
-                  className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
-                />
-                
-                <div className="flex justify-between gap-4 pt-4">
-                  <Button 
-                    variant="outline"
-                    onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
-                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
-                  >
-                    Back
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    onClick={() => handleMedicationSearch('', false)}
-                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
-                  >
-                    Search
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="camera">
-              <div className="space-y-6">
-                <h3 className="text-xl font-medium text-center mb-2 text-slate-800">
-                  Scan Prescription
-                </h3>
-                
-                <div className="flex justify-center">
-                  <div className="w-64 h-64 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center bg-slate-50">
-                    <span className="text-slate-400">Camera preview</span>
-                  </div>
-                </div>
-                
-                <div className="flex justify-between gap-4 pt-4">
-                  <Button 
-                    variant="outline"
-                    onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
-                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
-                  >
-                    Back
-                  </Button>
-                  
-                  <Button 
-                    variant="outline"
-                    onClick={() => handleMedicationSearch('', true)}
-                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
-                  >
-                    Scan
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    );
+    return 3; // Address → Card Scanning → Medications → Delivery Options
   };
 
   return (
@@ -474,32 +283,37 @@ const Index: React.FC = () => {
           />
         )}
 
-        {state.currentStep === 1 && renderMedicationTypeSelection()}
+        {state.currentStep === 1 && state.address && (
+          <>
+            <DeliveryAddressDisplay address={state.address} />
+            <CardScanningScreen 
+              onCardSubmit={handleCardSubmit}
+              onBack={handleBack}
+            />
+          </>
+        )}
         
-        {state.currentStep === 2 && (
-          (state.medicationType === 'prescription' || state.medicationType === 'both') && (
-            <>
-              {state.address && <DeliveryAddressDisplay address={state.address} />}
-              <PrescriptionForm 
-                onPrescriptionSubmit={handlePrescriptionSubmit} 
-                onBack={handleBack}
-                initialData={state.prescription}
-              />
-            </>
-          )
+        {state.currentStep === 2 && state.address && cardDetails && (
+          <>
+            <DeliveryAddressDisplay address={state.address} />
+            <PrescriptionForm 
+              onPrescriptionSubmit={handlePrescriptionSubmit} 
+              onBack={handleBack}
+              initialData={state.prescription}
+              cardDetails={cardDetails}
+            />
+          </>
         )}
         
         {state.currentStep === 3 && (
-          (state.medicationType === 'nonPrescription' || state.medicationType === 'both') && (
-            <>
-              {state.address && <DeliveryAddressDisplay address={state.address} />}
-              <NonPrescriptionForm 
-                onNonPrescriptionSubmit={handleNonPrescriptionSubmit} 
-                onBack={handleBack} 
-                showAllItems={true}
-              />
-            </>
-          )
+          <>
+            {state.address && <DeliveryAddressDisplay address={state.address} />}
+            <NonPrescriptionForm 
+              onNonPrescriptionSubmit={handleNonPrescriptionSubmit} 
+              onBack={handleBack} 
+              showAllItems={true}
+            />
+          </>
         )}
         
         {state.currentStep === 4 && state.address && state.deliveryEstimates && (

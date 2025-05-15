@@ -1,12 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MedicationType, Address } from '@/lib/types';
-import { Search, Camera, Navigation } from 'lucide-react';
+import { Navigation, MapPin } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { 
   Select,
@@ -41,6 +40,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('search');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
   
   const [address, setAddress] = useState<Address>(defaultAddress || {
     street: '',
@@ -51,6 +51,13 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Handle address selection from the map
+  const handleMapAddressSelect = (mapAddress: any) => {
+    // In a real implementation, this would extract address components from the Google Maps result
+    console.log("Address selected from map:", mapAddress);
+    // This is a simplified mock for demonstration purposes
+  };
 
   const handleAddressChange = (field: keyof Address, value: string) => {
     setAddress(prev => ({
@@ -113,48 +120,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     }
   };
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      // We don't know if it's prescription yet, so default to non-prescription
-      // The type will be selected in a later step
-      onMedicationSearch(searchQuery, false);
-    } else {
-      toast({
-        title: "Search query empty",
-        description: "Please enter a medication name to search",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleImageCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          setImagePreview(event.target.result);
-          toast({
-            title: "Prescription image captured",
-            description: "Analyzing prescription details...",
-          });
-          
-          // Simulate prescription recognition
-          setTimeout(() => {
-            setSearchQuery("Ibuprofen 600mg");
-            toast({
-              title: "Prescription recognized",
-              description: "Found: Ibuprofen 600mg",
-            });
-          }, 1500);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   return (
-    <Card className="w-full max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+    <Card className="w-full max-w-4xl mx-auto bg-white border-slate-200 shadow-sm">
       <CardContent className="p-6">
         <div className="flex items-center justify-center w-full mb-6">
           <div className="bg-primary/10 p-3 rounded-full">
@@ -174,87 +141,115 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           </p>
         </div>
         
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-blue-100">
-            <h3 className="text-lg font-medium mb-4 flex items-center">
-              <Navigation className="h-5 w-5 mr-2 text-primary" />
-              Delivery Address
-            </h3>
-            
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="street">Street Address</Label>
-                <Input
-                  id="street"
-                  placeholder="Enter your street and number"
-                  value={address.street}
-                  onChange={(e) => handleAddressChange('street', e.target.value)}
-                  className={errors.street ? "border-destructive" : ""}
-                />
-                {errors.street && (
-                  <p className="text-sm text-destructive">{errors.street}</p>
-                )}
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left side: Address form */}
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
+              <h3 className="text-lg font-medium mb-4 flex items-center">
+                <MapPin className="h-5 w-5 mr-2 text-primary" />
+                Delivery Address
+              </h3>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
+                  <Label htmlFor="street">Street Address</Label>
                   <Input
-                    id="city"
-                    placeholder="City"
-                    value={address.city}
-                    onChange={(e) => handleAddressChange('city', e.target.value)}
-                    className={errors.city ? "border-destructive" : ""}
+                    id="street"
+                    placeholder="Enter your street and number"
+                    value={address.street}
+                    onChange={(e) => handleAddressChange('street', e.target.value)}
+                    className={errors.street ? "border-destructive" : ""}
                   />
-                  {errors.city && (
-                    <p className="text-sm text-destructive">{errors.city}</p>
+                  {errors.street && (
+                    <p className="text-sm text-destructive">{errors.street}</p>
                   )}
                 </div>
                 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      placeholder="City"
+                      value={address.city}
+                      onChange={(e) => handleAddressChange('city', e.target.value)}
+                      className={errors.city ? "border-destructive" : ""}
+                    />
+                    {errors.city && (
+                      <p className="text-sm text-destructive">{errors.city}</p>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="postalCode">Postal Code</Label>
+                    <Input
+                      id="postalCode"
+                      placeholder="Postal code"
+                      value={address.postalCode}
+                      onChange={(e) => handleAddressChange('postalCode', e.target.value)}
+                      className={errors.postalCode ? "border-destructive" : ""}
+                    />
+                    {errors.postalCode && (
+                      <p className="text-sm text-destructive">{errors.postalCode}</p>
+                    )}
+                  </div>
+                </div>
+                
                 <div className="space-y-2">
-                  <Label htmlFor="postalCode">Postal Code</Label>
-                  <Input
-                    id="postalCode"
-                    placeholder="Postal code"
-                    value={address.postalCode}
-                    onChange={(e) => handleAddressChange('postalCode', e.target.value)}
-                    className={errors.postalCode ? "border-destructive" : ""}
-                  />
-                  {errors.postalCode && (
-                    <p className="text-sm text-destructive">{errors.postalCode}</p>
+                  <Label htmlFor="country">Country</Label>
+                  <Select 
+                    value={address.country} 
+                    onValueChange={(value) => handleAddressChange('country', value)}
+                  >
+                    <SelectTrigger className={errors.country ? "border-destructive" : ""}>
+                      <SelectValue placeholder="Select a country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {europeanCountries.map(country => (
+                        <SelectItem key={country} value={country}>
+                          {country}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.country && (
+                    <p className="text-sm text-destructive">{errors.country}</p>
                   )}
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="country">Country</Label>
-                <Select 
-                  value={address.country} 
-                  onValueChange={(value) => handleAddressChange('country', value)}
+                
+                <Button 
+                  onClick={handleAddressSubmit} 
+                  className="w-full bg-primary hover:bg-primary/90"
                 >
-                  <SelectTrigger className={errors.country ? "border-destructive" : ""}>
-                    <SelectValue placeholder="Select a country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {europeanCountries.map(country => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {errors.country && (
-                  <p className="text-sm text-destructive">{errors.country}</p>
-                )}
+                  Continue to Card Scanning
+                </Button>
               </div>
-              
-              <Button 
-                onClick={handleAddressSubmit} 
-                className="w-full bg-primary hover:bg-primary/90"
-              >
-                Continue to Medication Search
-              </Button>
             </div>
+          </div>
+          
+          {/* Right side: Google Maps iframe */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 h-[400px] md:h-auto">
+            <h3 className="text-lg font-medium mb-4 flex items-center">
+              <MapPin className="h-5 w-5 mr-2 text-primary" />
+              Select on Map
+            </h3>
+            
+            <div className="w-full h-[300px] border border-slate-200 rounded-md overflow-hidden">
+              <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5131882.799497933!2d5.979733705342818!3d51.08510257031399!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x479a721ec2b1be6b%3A0x75e85d6b8e91e55b!2sGermany!5e0!3m2!1sen!2sus!4v1652347851925!5m2!1sen!2sus" 
+                width="100%" 
+                height="100%" 
+                style={{ border: 0 }} 
+                allowFullScreen={false} 
+                loading="lazy" 
+                referrerPolicy="no-referrer-when-downgrade"
+                onLoad={() => setMapLoaded(true)}
+                title="Google Maps"
+              />
+            </div>
+            <p className="text-sm text-muted-foreground mt-2 text-center">
+              Click on the map to select your location
+            </p>
           </div>
         </div>
       </CardContent>
