@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import StepIndicator from '@/components/StepIndicator';
-import AddressForm from '@/components/AddressForm';
 import PrescriptionForm from '@/components/PrescriptionForm';
 import NonPrescriptionForm from '@/components/NonPrescriptionForm';
 import DeliveryComparison from '@/components/DeliveryComparison';
 import WelcomeScreen from '@/components/WelcomeScreen';
+import DeliveryAddressDisplay from '@/components/DeliveryAddressDisplay';
 import { Address, Prescription, DeliveryEstimate, NonPrescriptionItem, MedicationType, AppState } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,11 +13,12 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { FileText, Pill, PackagePlus } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const Index: React.FC = () => {
   const { toast } = useToast();
   const [state, setState] = useState<AppState>({
-    currentStep: 0,  // Start with welcome screen
+    currentStep: 0,  // Start with welcome screen for address entry
     medicationType: null,
     address: null,
     prescription: null,
@@ -29,12 +30,15 @@ const Index: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [isFromCamera, setIsFromCamera] = useState(false);
 
-  // Simulate default address for the user account
-  const defaultAddress: Address = {
-    street: "Hauptstraße 123",
-    city: "Berlin",
-    postalCode: "10115",
-    country: "Germany"
+  // Simulate default address for the user account - now we'll start with null
+  const defaultAddress: Address | null = null;
+
+  const handleAddressSubmit = (submittedAddress: Address) => {
+    setState(prev => ({
+      ...prev,
+      address: submittedAddress,
+      currentStep: 1 // Move to medication search step
+    }));
   };
 
   const handleMedicationTypeSelect = (type: MedicationType) => {
@@ -43,8 +47,6 @@ const Index: React.FC = () => {
       medicationType: type,
       // Go to appropriate medication selection screen
       currentStep: type === 'prescription' || type === 'both' ? 2 : 3,
-      // Use default address from account
-      address: defaultAddress
     }));
     
     toast({
@@ -61,7 +63,6 @@ const Index: React.FC = () => {
     setState(prev => ({
       ...prev,
       currentStep: 1, // Go to medication type selection
-      address: defaultAddress
     }));
   };
 
@@ -71,8 +72,6 @@ const Index: React.FC = () => {
       ...prev,
       medicationType: type,
       currentStep: type === 'prescription' || type === 'both' ? 2 : 3,
-      // Use the saved address
-      address: defaultAddress
     }));
 
     // If user searched for a prescription and selected prescription type,
@@ -102,20 +101,6 @@ const Index: React.FC = () => {
     toast({
       title: `${type === 'both' ? 'Combined' : type === 'prescription' ? 'Prescription' : 'Non-prescription'} delivery selected`,
       description: searchQuery ? `Searching for "${searchQuery}"` : "Using your saved delivery address",
-    });
-  };
-
-  const handleAddressSubmit = (submittedAddress: Address) => {
-    setState(prev => ({
-      ...prev,
-      address: submittedAddress,
-      // If non-prescription type, go directly to step 3
-      currentStep: prev.medicationType === 'nonPrescription' ? 3 : 2
-    }));
-    
-    toast({
-      title: "Address saved",
-      description: "Your delivery address has been saved",
     });
   };
 
@@ -262,11 +247,11 @@ const Index: React.FC = () => {
       if (state.medicationType === 'both') {
         // If we're at prescription step and coming back from non-prescription, go back to address
         if (state.currentStep === 2 && state.nonPrescriptionItems) {
-          setState(prev => ({ ...prev, currentStep: 0 }));
+          setState(prev => ({ ...prev, currentStep: 1 }));
         }
         // If we're at non-prescription step and coming back from prescription, go back to address
         else if (state.currentStep === 3 && state.prescription) {
-          setState(prev => ({ ...prev, currentStep: 0 }));
+          setState(prev => ({ ...prev, currentStep: 1 }));
         }
         // Normal back
         else {
@@ -299,18 +284,19 @@ const Index: React.FC = () => {
   const getTotalSteps = () => {
     if (!state.medicationType) return 1; // Just the welcome screen
     
-    // Skip address step
     return state.medicationType === 'both' ? 4 : 3;
   };
 
   // Render medication type selection screen after search
   const renderMedicationTypeSelection = () => {
     return (
-      <Card className="w-full max-w-2xl mx-auto">
+      <Card className="w-full max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
         <CardContent className="p-6">
+          {state.address && <DeliveryAddressDisplay address={state.address} />}
+          
           <div className="space-y-6">
             <h3 className="text-xl font-medium text-center mb-2">
-              Select Medication Type for "{searchQuery}"
+              Select Medication Type {searchQuery ? `for "${searchQuery}"` : ""}
             </h3>
             
             <RadioGroup 
@@ -387,6 +373,82 @@ const Index: React.FC = () => {
     );
   };
 
+  // Modify the search screen content to show the address
+  const renderSearchScreen = () => {
+    return (
+      <Card className="w-full max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+        <CardContent className="p-6">
+          {state.address && <DeliveryAddressDisplay address={state.address} />}
+          
+          <Tabs defaultValue="search" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="search">Search</TabsTrigger>
+              <TabsTrigger value="camera">Camera</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="search">
+              <div className="space-y-6">
+                <h3 className="text-xl font-medium text-center mb-2">
+                  Search for Medication
+                </h3>
+                
+                <input 
+                  type="text" 
+                  placeholder="Enter medication name or code" 
+                  className="w-full p-2 border rounded-lg"
+                />
+                
+                <div className="flex justify-between gap-4 pt-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
+                  >
+                    Back
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleMedicationSearch('', false)}
+                  >
+                    Search
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="camera">
+              <div className="space-y-6">
+                <h3 className="text-xl font-medium text-center mb-2">
+                  Scan Prescription
+                </h3>
+                
+                <div className="flex justify-center">
+                  <img src="prescription-image.jpg" alt="Prescription Image" className="w-64 h-64" />
+                </div>
+                
+                <div className="flex justify-between gap-4 pt-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
+                  >
+                    Back
+                  </Button>
+                  
+                  <Button 
+                    variant="outline"
+                    onClick={() => handleMedicationSearch('', true)}
+                  >
+                    Scan
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <Layout>
       {state.currentStep > 0 && (
@@ -396,8 +458,10 @@ const Index: React.FC = () => {
       <div className="mt-8">
         {state.currentStep === 0 && (
           <WelcomeScreen 
-            onMedicationTypeSelect={handleMedicationTypeSelect} 
+            onMedicationTypeSelect={handleMedicationTypeSelect}
             onMedicationSearch={handleMedicationSearch}
+            onAddressSubmit={handleAddressSubmit}
+            defaultAddress={defaultAddress}
           />
         )}
 
@@ -405,21 +469,27 @@ const Index: React.FC = () => {
         
         {state.currentStep === 2 && (
           (state.medicationType === 'prescription' || state.medicationType === 'both') && (
-            <PrescriptionForm 
-              onPrescriptionSubmit={handlePrescriptionSubmit} 
-              onBack={handleBack}
-              initialData={state.prescription}
-            />
+            <>
+              {state.address && <DeliveryAddressDisplay address={state.address} />}
+              <PrescriptionForm 
+                onPrescriptionSubmit={handlePrescriptionSubmit} 
+                onBack={handleBack}
+                initialData={state.prescription}
+              />
+            </>
           )
         )}
         
         {state.currentStep === 3 && (
           (state.medicationType === 'nonPrescription' || state.medicationType === 'both') && (
-            <NonPrescriptionForm 
-              onNonPrescriptionSubmit={handleNonPrescriptionSubmit} 
-              onBack={handleBack} 
-              showAllItems={true}
-            />
+            <>
+              {state.address && <DeliveryAddressDisplay address={state.address} />}
+              <NonPrescriptionForm 
+                onNonPrescriptionSubmit={handleNonPrescriptionSubmit} 
+                onBack={handleBack} 
+                showAllItems={true}
+              />
+            </>
           )
         )}
         
