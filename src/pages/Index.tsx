@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import StepIndicator from '@/components/StepIndicator';
@@ -292,12 +291,12 @@ const Index: React.FC = () => {
   // Render medication type selection screen after search
   const renderMedicationTypeSelection = () => {
     return (
-      <Card className="w-full max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="w-full max-w-2xl mx-auto bg-white border-slate-200 shadow-sm">
         <CardContent className="p-6">
           {state.address && <DeliveryAddressDisplay address={state.address} />}
           
           <div className="space-y-6">
-            <h3 className="text-xl font-medium text-center mb-2 text-blue-800">
+            <h3 className="text-xl font-medium text-center mb-2 text-slate-800">
               Select Medication Type {searchQuery ? `for "${searchQuery}"` : ""}
             </h3>
             
@@ -307,15 +306,15 @@ const Index: React.FC = () => {
             >
               <Label 
                 htmlFor="prescription" 
-                className="flex items-start p-4 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/50 transition-colors"
+                className="flex items-start p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
               >
-                <RadioGroupItem value="prescription" id="prescription" className="mt-1 text-blue-600 border-blue-400" />
+                <RadioGroupItem value="prescription" id="prescription" className="mt-1 text-slate-600 border-slate-400" />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="font-medium text-blue-800">Prescription Medication</span>
+                    <FileText className="h-5 w-5 text-slate-600 mr-2" />
+                    <span className="font-medium text-slate-800">Prescription Medication</span>
                   </div>
-                  <p className="text-sm text-blue-600 mt-1">
+                  <p className="text-sm text-slate-600 mt-1">
                     Medications that require a doctor's prescription
                   </p>
                 </div>
@@ -323,15 +322,15 @@ const Index: React.FC = () => {
               
               <Label 
                 htmlFor="nonPrescription"
-                className="flex items-start p-4 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/50 transition-colors"
+                className="flex items-start p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
               >
-                <RadioGroupItem value="nonPrescription" id="nonPrescription" className="mt-1 text-blue-600 border-blue-400" />
+                <RadioGroupItem value="nonPrescription" id="nonPrescription" className="mt-1 text-slate-600 border-slate-400" />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center">
-                    <Pill className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="font-medium text-blue-800">Non-Prescription Medication</span>
+                    <Pill className="h-5 w-5 text-slate-600 mr-2" />
+                    <span className="font-medium text-slate-800">Non-Prescription Medication</span>
                   </div>
-                  <p className="text-sm text-blue-600 mt-1">
+                  <p className="text-sm text-slate-600 mt-1">
                     Over-the-counter medications and healthcare products
                   </p>
                 </div>
@@ -339,15 +338,15 @@ const Index: React.FC = () => {
               
               <Label 
                 htmlFor="both"
-                className="flex items-start p-4 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/50 transition-colors"
+                className="flex items-start p-4 border border-slate-200 rounded-lg cursor-pointer hover:bg-slate-50 transition-colors"
               >
-                <RadioGroupItem value="both" id="both" className="mt-1 text-blue-600 border-blue-400" />
+                <RadioGroupItem value="both" id="both" className="mt-1 text-slate-600 border-slate-400" />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center">
-                    <PackagePlus className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="font-medium text-blue-800">Both</span>
+                    <PackagePlus className="h-5 w-5 text-slate-600 mr-2" />
+                    <span className="font-medium text-slate-800">Both</span>
                   </div>
-                  <p className="text-sm text-blue-600 mt-1">
+                  <p className="text-sm text-slate-600 mt-1">
                     I need both prescription and non-prescription items
                   </p>
                 </div>
@@ -358,7 +357,7 @@ const Index: React.FC = () => {
               <Button 
                 variant="outline"
                 onClick={handleBack}
-                className="border-blue-300 bg-white hover:bg-blue-50 text-blue-700"
+                className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
               >
                 Back
               </Button>
@@ -366,7 +365,7 @@ const Index: React.FC = () => {
               <Button 
                 variant="outline"
                 onClick={() => handleMedicationTypeSelect('nonPrescription')}
-                className="border-blue-300 bg-white hover:bg-blue-50 text-blue-700"
+                className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
               >
                 Browse All Products
               </Button>
@@ -380,32 +379,33 @@ const Index: React.FC = () => {
   // Modify the search screen content to show the address
   const renderSearchScreen = () => {
     return (
-      <Card className="w-full max-w-2xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="w-full max-w-2xl mx-auto bg-white border-slate-200 shadow-sm">
         <CardContent className="p-6">
           {state.address && <DeliveryAddressDisplay address={state.address} />}
           
           <Tabs defaultValue="search" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
-              <TabsTrigger value="search">Search</TabsTrigger>
-              <TabsTrigger value="camera">Camera</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-8 bg-slate-100">
+              <TabsTrigger value="search" className="data-[state=active]:bg-white">Search</TabsTrigger>
+              <TabsTrigger value="camera" className="data-[state=active]:bg-white">Camera</TabsTrigger>
             </TabsList>
             
             <TabsContent value="search">
               <div className="space-y-6">
-                <h3 className="text-xl font-medium text-center mb-2">
+                <h3 className="text-xl font-medium text-center mb-2 text-slate-800">
                   Search for Medication
                 </h3>
                 
                 <input 
                   type="text" 
                   placeholder="Enter medication name or code" 
-                  className="w-full p-2 border rounded-lg"
+                  className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400"
                 />
                 
                 <div className="flex justify-between gap-4 pt-4">
                   <Button 
                     variant="outline"
                     onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
+                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                   >
                     Back
                   </Button>
@@ -413,6 +413,7 @@ const Index: React.FC = () => {
                   <Button 
                     variant="outline"
                     onClick={() => handleMedicationSearch('', false)}
+                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                   >
                     Search
                   </Button>
@@ -422,18 +423,21 @@ const Index: React.FC = () => {
             
             <TabsContent value="camera">
               <div className="space-y-6">
-                <h3 className="text-xl font-medium text-center mb-2">
+                <h3 className="text-xl font-medium text-center mb-2 text-slate-800">
                   Scan Prescription
                 </h3>
                 
                 <div className="flex justify-center">
-                  <img src="prescription-image.jpg" alt="Prescription Image" className="w-64 h-64" />
+                  <div className="w-64 h-64 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center bg-slate-50">
+                    <span className="text-slate-400">Camera preview</span>
+                  </div>
                 </div>
                 
                 <div className="flex justify-between gap-4 pt-4">
                   <Button 
                     variant="outline"
                     onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
+                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                   >
                     Back
                   </Button>
@@ -441,6 +445,7 @@ const Index: React.FC = () => {
                   <Button 
                     variant="outline"
                     onClick={() => handleMedicationSearch('', true)}
+                    className="border-slate-300 bg-white hover:bg-slate-50 text-slate-700"
                   >
                     Scan
                   </Button>
@@ -459,7 +464,7 @@ const Index: React.FC = () => {
         <StepIndicator currentStep={state.currentStep} totalSteps={getTotalSteps()} />
       )}
       
-      <div className="mt-8">
+      <div className="mt-8 max-w-4xl mx-auto">
         {state.currentStep === 0 && (
           <WelcomeScreen 
             onMedicationTypeSelect={handleMedicationTypeSelect}

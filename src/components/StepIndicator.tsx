@@ -20,12 +20,12 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
   const displaySteps = totalSteps === 4 ? steps : steps.filter((_, index) => index !== 1);
 
   return (
-    <div className="w-full py-6">
+    <div className="w-full py-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <Button
           variant="ghost"
           size="sm"
-          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
+          className="flex items-center gap-1 text-slate-600 hover:text-slate-800 hover:bg-slate-50"
           onClick={() => window.location.href = '/'}
         >
           <Home className="h-4 w-4" />
@@ -47,8 +47,8 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
                     className={cn(
                       "w-10 h-10 rounded-full flex items-center justify-center z-10 border-2",
                       isActive 
-                        ? "bg-blue-600 border-blue-600 text-white" 
-                        : "bg-blue-100 border-blue-200 text-blue-400"
+                        ? "bg-slate-700 border-slate-700 text-white" 
+                        : "bg-slate-100 border-slate-200 text-slate-400"
                     )}
                   >
                     {isCompleted ? (
@@ -58,7 +58,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
                     )}
                   </div>
                   <div className="mt-2 text-sm font-medium text-center">
-                    <span className={isActive ? "text-blue-800" : "text-blue-400"}>
+                    <span className={isActive ? "text-slate-800" : "text-slate-400"}>
                       {step.name}
                     </span>
                   </div>
@@ -67,7 +67,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
                   <div 
                     className={cn(
                       "flex-1 border-t-2",
-                      isActive && currentStep > index + 2 ? "border-blue-600" : "border-blue-200"
+                      isActive && currentStep > index + 2 ? "border-slate-600" : "border-slate-200"
                     )} 
                   />
                 )}
