@@ -18,7 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-100/20">
       <div className="container mx-auto px-4 py-8">
         <header className="w-full max-w-4xl mx-auto mb-8 text-center relative">
           <div className="absolute left-0 top-1">
@@ -26,14 +26,14 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
               variant="outline" 
               size="sm" 
               onClick={handleHomeClick}
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 border-blue-300 bg-white/80 hover:bg-blue-50"
             >
-              <Home className="h-4 w-4" />
-              <span className="hidden sm:inline">Home</span>
+              <Home className="h-4 w-4 text-blue-600" />
+              <span className="hidden sm:inline text-blue-600">Home</span>
             </Button>
           </div>
-          <h1 className="text-3xl font-bold">MediDelivery</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-3xl font-bold text-blue-800">MediDelivery</h1>
+          <p className="text-blue-600 mt-2">
             Prescription delivery optimization for Europe
           </p>
         </header>
@@ -42,7 +42,7 @@ const Layout: React.FC<LayoutProps> = ({ children, className }) => {
           {children}
         </main>
         
-        <footer className="mt-20 py-6 text-center text-sm text-muted-foreground">
+        <footer className="mt-20 py-6 text-center text-sm text-blue-500">
           <p>© 2025 MediDelivery - Optimized medication delivery service</p>
         </footer>
       </div>

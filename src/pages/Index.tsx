@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import StepIndicator from '@/components/StepIndicator';
@@ -66,7 +67,6 @@ const Index: React.FC = () => {
     }));
   };
 
-  // Handle medication type selection after search
   const handleTypeSelectionAfterSearch = (type: MedicationType) => {
     setState(prev => ({
       ...prev,
@@ -242,24 +242,26 @@ const Index: React.FC = () => {
   };
 
   const handleBack = () => {
+    // Fix back button functionality
     if (state.currentStep > 0) {
-      // Special logic for the medication type "both"
-      if (state.medicationType === 'both') {
-        // If we're at prescription step and coming back from non-prescription, go back to address
-        if (state.currentStep === 2 && state.nonPrescriptionItems) {
-          setState(prev => ({ ...prev, currentStep: 1 }));
+      // For prescription or non-prescription steps, go back to medication type selection
+      if (state.currentStep === 2 || state.currentStep === 3) {
+        setState(prev => ({ ...prev, currentStep: 1 }));
+      }
+      // For delivery options, go back based on the medication type
+      else if (state.currentStep === 4) {
+        if (state.medicationType === 'both') {
+          // If both, go back to non-prescription form (the last one visited)
+          setState(prev => ({ ...prev, currentStep: 3 }));
+        } else if (state.medicationType === 'prescription') {
+          setState(prev => ({ ...prev, currentStep: 2 }));
+        } else {
+          setState(prev => ({ ...prev, currentStep: 3 }));
         }
-        // If we're at non-prescription step and coming back from prescription, go back to address
-        else if (state.currentStep === 3 && state.prescription) {
-          setState(prev => ({ ...prev, currentStep: 1 }));
-        }
-        // Normal back
-        else {
-          setState(prev => ({ ...prev, currentStep: prev.currentStep - 1 }));
-        }
-      } else {
-        // Normal back for other medication types
-        setState(prev => ({ ...prev, currentStep: prev.currentStep - 1 }));
+      }
+      // For medication type selection, go back to welcome screen
+      else if (state.currentStep === 1) {
+        setState(prev => ({ ...prev, currentStep: 0 }));
       }
     }
   };
@@ -295,7 +297,7 @@ const Index: React.FC = () => {
           {state.address && <DeliveryAddressDisplay address={state.address} />}
           
           <div className="space-y-6">
-            <h3 className="text-xl font-medium text-center mb-2">
+            <h3 className="text-xl font-medium text-center mb-2 text-blue-800">
               Select Medication Type {searchQuery ? `for "${searchQuery}"` : ""}
             </h3>
             
@@ -305,15 +307,15 @@ const Index: React.FC = () => {
             >
               <Label 
                 htmlFor="prescription" 
-                className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                className="flex items-start p-4 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/50 transition-colors"
               >
-                <RadioGroupItem value="prescription" id="prescription" className="mt-1" />
+                <RadioGroupItem value="prescription" id="prescription" className="mt-1 text-blue-600 border-blue-400" />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center">
-                    <FileText className="h-5 w-5 text-primary mr-2" />
-                    <span className="font-medium">Prescription Medication</span>
+                    <FileText className="h-5 w-5 text-blue-600 mr-2" />
+                    <span className="font-medium text-blue-800">Prescription Medication</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-blue-600 mt-1">
                     Medications that require a doctor's prescription
                   </p>
                 </div>
@@ -321,15 +323,15 @@ const Index: React.FC = () => {
               
               <Label 
                 htmlFor="nonPrescription"
-                className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                className="flex items-start p-4 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/50 transition-colors"
               >
-                <RadioGroupItem value="nonPrescription" id="nonPrescription" className="mt-1" />
+                <RadioGroupItem value="nonPrescription" id="nonPrescription" className="mt-1 text-blue-600 border-blue-400" />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center">
-                    <Pill className="h-5 w-5 text-primary mr-2" />
-                    <span className="font-medium">Non-Prescription Medication</span>
+                    <Pill className="h-5 w-5 text-blue-600 mr-2" />
+                    <span className="font-medium text-blue-800">Non-Prescription Medication</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-blue-600 mt-1">
                     Over-the-counter medications and healthcare products
                   </p>
                 </div>
@@ -337,15 +339,15 @@ const Index: React.FC = () => {
               
               <Label 
                 htmlFor="both"
-                className="flex items-start p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors"
+                className="flex items-start p-4 border border-blue-200 rounded-lg cursor-pointer hover:bg-blue-50/50 transition-colors"
               >
-                <RadioGroupItem value="both" id="both" className="mt-1" />
+                <RadioGroupItem value="both" id="both" className="mt-1 text-blue-600 border-blue-400" />
                 <div className="ml-3 flex-1">
                   <div className="flex items-center">
-                    <PackagePlus className="h-5 w-5 text-primary mr-2" />
-                    <span className="font-medium">Both</span>
+                    <PackagePlus className="h-5 w-5 text-blue-600 mr-2" />
+                    <span className="font-medium text-blue-800">Both</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-blue-600 mt-1">
                     I need both prescription and non-prescription items
                   </p>
                 </div>
@@ -355,7 +357,8 @@ const Index: React.FC = () => {
             <div className="flex justify-between gap-4 pt-4">
               <Button 
                 variant="outline"
-                onClick={() => setState(prev => ({ ...prev, currentStep: 0 }))}
+                onClick={handleBack}
+                className="border-blue-300 bg-white hover:bg-blue-50 text-blue-700"
               >
                 Back
               </Button>
@@ -363,6 +366,7 @@ const Index: React.FC = () => {
               <Button 
                 variant="outline"
                 onClick={() => handleMedicationTypeSelect('nonPrescription')}
+                className="border-blue-300 bg-white hover:bg-blue-50 text-blue-700"
               >
                 Browse All Products
               </Button>

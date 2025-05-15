@@ -25,7 +25,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
         <Button
           variant="ghost"
           size="sm"
-          className="flex items-center gap-1"
+          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50"
           onClick={() => window.location.href = '/'}
         >
           <Home className="h-4 w-4" />
@@ -47,8 +47,8 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
                     className={cn(
                       "w-10 h-10 rounded-full flex items-center justify-center z-10 border-2",
                       isActive 
-                        ? "bg-primary border-primary text-primary-foreground" 
-                        : "bg-muted border-muted text-muted-foreground"
+                        ? "bg-blue-600 border-blue-600 text-white" 
+                        : "bg-blue-100 border-blue-200 text-blue-400"
                     )}
                   >
                     {isCompleted ? (
@@ -58,7 +58,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
                     )}
                   </div>
                   <div className="mt-2 text-sm font-medium text-center">
-                    <span className={isActive ? "text-foreground" : "text-muted-foreground"}>
+                    <span className={isActive ? "text-blue-800" : "text-blue-400"}>
                       {step.name}
                     </span>
                   </div>
@@ -67,7 +67,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ currentStep, totalSteps }
                   <div 
                     className={cn(
                       "flex-1 border-t-2",
-                      isActive && currentStep > index + 2 ? "border-primary" : "border-muted"
+                      isActive && currentStep > index + 2 ? "border-blue-600" : "border-blue-200"
                     )} 
                   />
                 )}
