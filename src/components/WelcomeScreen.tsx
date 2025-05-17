@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { MedicationType, Address } from '@/lib/types';
 import { Navigation, MapPin, Search } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Label } from '@/components/ui/label';
+import { usePlacesWidget } from "react-google-autocomplete";
 
 interface WelcomeScreenProps {
   onMedicationTypeSelect: (type: MedicationType) => void;
@@ -27,6 +27,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   
+  // Using API key from environment variables
+  const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  
   const [address, setAddress] = useState<Address>(defaultAddress || {
     street: '',
     city: '',
@@ -36,86 +39,73 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   });
 
   const [singleAddressInput, setSingleAddressInput] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isValidAddress, setIsValidAddress] = useState(false);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Mock suggestions - in a real app, these would come from a geocoding API
-  const mockSuggestions = [
-    "Friedrichstraße 123, 10117 Berlin, Germany",
-    "Alexanderplatz 1, 10178 Berlin, Germany",
-    "Kurfürstendamm 234, 10719 Berlin, Germany",
-    "Potsdamer Platz 5, 10785 Berlin, Germany",
-    "Unter den Linden 77, 10117 Berlin, Germany"
-  ];
-
-  useEffect(() => {
-    // Click outside to close suggestions
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        suggestionsRef.current && 
-        !suggestionsRef.current.contains(event.target as Node) && 
-        inputRef.current && 
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSingleAddressInput(value);
-    
-    // Only show suggestions when there's input and it's at least 3 characters
-    if (value.length >= 3) {
-      // Filter mock suggestions - in a real app, this would be an API call
-      const filtered = mockSuggestions.filter(
-        suggestion => suggestion.toLowerCase().includes(value.toLowerCase())
-      );
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-      setIsValidAddress(false);
-    } else {
-      setSuggestions([]);
-      setShowSuggestions(false);
-      setIsValidAddress(false);
-    }
-  };
-
-  const selectSuggestion = (suggestion: string) => {
-    setSingleAddressInput(suggestion);
-    setShowSuggestions(false);
-    setIsValidAddress(true);
-    
-    // Parse the selected suggestion into address components
-    // In a real app, this would use a proper address parser or geocoding API
-    const parts = suggestion.split(', ');
-    if (parts.length >= 3) {
-      const [street, cityWithPostal, country] = parts;
-      const postalCodeMatch = cityWithPostal.match(/(\d+)/);
-      const postalCode = postalCodeMatch ? postalCodeMatch[0] : '';
-      const city = cityWithPostal.replace(postalCode, '').trim();
+  
+  // Google Places Autocomplete integration
+  const { ref: googleAutocompleteInputRef } = usePlacesWidget({
+    apiKey: GOOGLE_MAPS_API_KEY,
+    onPlaceSelected: (place) => {
+      console.log("Place selected:", place);
       
-      setAddress({
-        street,
-        city,
-        postalCode,
-        country,
-        coordinates: {
-          lat: 52.5200 + Math.random() * 0.01, // Mock coordinates for Berlin
-          lng: 13.4050 + Math.random() * 0.01
+      // Extract address components from the Google Place result
+      if (place && place.address_components) {
+        let newAddress: Address = {
+          street: '',
+          city: '',
+          postalCode: '',
+          country: 'Germany',
+          coordinates: undefined
+        };
+        
+        // Set coordinates if available
+        if (place.geometry?.location) {
+          newAddress.coordinates = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng()
+          };
         }
-      });
-    }
-  };
+        
+        // Process address components
+        place.address_components.forEach((component: any) => {
+          const types = component.types;
+          
+          if (types.includes('street_number') || types.includes('route')) {
+            // Build the street address
+            if (types.includes('street_number')) {
+              newAddress.street = component.long_name + ' ' + (newAddress.street || '');
+            } else if (types.includes('route')) {
+              newAddress.street = (newAddress.street || '') + component.long_name;
+            }
+          }
+          
+          if (types.includes('locality') || types.includes('sublocality')) {
+            newAddress.city = component.long_name;
+          }
+          
+          if (types.includes('postal_code')) {
+            newAddress.postalCode = component.long_name;
+          }
+          
+          if (types.includes('country')) {
+            newAddress.country = component.long_name;
+          }
+        });
+        
+        // Update the address state
+        setAddress(newAddress);
+        
+        // Update the single input for display
+        setSingleAddressInput(place.formatted_address || '');
+        
+        // Mark as valid address
+        setIsValidAddress(true);
+      }
+    },
+    options: {
+      types: ["address"], // Restrict to address types
+      componentRestrictions: { country: "de" }, // Example: Restrict to Germany, can be changed or removed
+    },
+  });
 
   const handleAddressSubmit = () => {
     if (isValidAddress) {
@@ -172,30 +162,12 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                       id="addressInput"
                       placeholder="Start typing your address..."
                       value={singleAddressInput}
-                      onChange={handleInputChange}
-                      onFocus={() => singleAddressInput.length >= 3 && setSuggestions.length > 0 && setShowSuggestions(true)}
+                      onChange={(e) => setSingleAddressInput(e.target.value)}
                       className="pr-10"
-                      ref={inputRef}
+                      ref={googleAutocompleteInputRef}
                     />
                     <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
-                  
-                  {showSuggestions && (
-                    <div 
-                      ref={suggestionsRef}
-                      className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
-                    >
-                      {suggestions.map((suggestion, index) => (
-                        <div
-                          key={index}
-                          className="px-4 py-2 hover:bg-slate-100 cursor-pointer text-sm"
-                          onClick={() => selectSuggestion(suggestion)}
-                        >
-                          {suggestion}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                   
                   {isValidAddress && (
                     <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
@@ -204,7 +176,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   )}
                   
                   <p className="text-xs text-muted-foreground mt-1">
-                    Please select a suggestion from the dropdown after typing
+                    Start typing and select an address suggestion from the dropdown
                   </p>
                 </div>
                 
@@ -228,7 +200,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
             
             <div className="w-full h-[300px] border border-slate-200 rounded-md overflow-hidden">
               <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5131882.799497933!2d5.979733705342818!3d51.08510257031399!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x479a721ec2b1be6b%3A0x75e85d6b8e91e55b!2sGermany!5e0!3m2!1sen!2sus!4v1652347851925!5m2!1sen!2sus" 
+                src={`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_API_KEY}&q=Germany`}
                 width="100%" 
                 height="100%" 
                 style={{ border: 0 }} 
