@@ -25,7 +25,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('search');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   
   const [address, setAddress] = useState<Address>(defaultAddress || {
     street: '',
@@ -155,93 +154,66 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left side: Address form */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
-              <h3 className="text-lg font-medium mb-4 flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-primary" />
-                Delivery Address
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="space-y-2 relative">
-                  <Label htmlFor="addressInput">Enter your address</Label>
-                  <div className="relative">
-                    <Input
-                      id="addressInput"
-                      placeholder="Start typing your address..."
-                      value={singleAddressInput}
-                      onChange={handleInputChange}
-                      onFocus={() => singleAddressInput.length >= 3 && setSuggestions.length > 0 && setShowSuggestions(true)}
-                      className="pr-10"
-                      ref={inputRef}
-                    />
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
-                  
-                  {showSuggestions && (
-                    <div 
-                      ref={suggestionsRef}
-                      className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
-                    >
-                      {suggestions.map((suggestion, index) => (
-                        <div
-                          key={index}
-                          className="px-4 py-2 hover:bg-slate-100 cursor-pointer text-sm"
-                          onClick={() => selectSuggestion(suggestion)}
-                        >
-                          {suggestion}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {isValidAddress && (
-                    <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
-                      ✓ Valid address selected
-                    </div>
-                  )}
-                  
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Please select a suggestion from the dropdown after typing
-                  </p>
-                </div>
-                
-                <Button 
-                  onClick={handleAddressSubmit} 
-                  className="w-full bg-primary hover:bg-primary/90"
-                  disabled={!isValidAddress}
-                >
-                  Continue to Card Scanning
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          {/* Right side: Google Maps iframe */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 h-[400px] md:h-auto">
+        <div className="space-y-6">
+          {/* Address form */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h3 className="text-lg font-medium mb-4 flex items-center">
               <MapPin className="h-5 w-5 mr-2 text-primary" />
-              Select on Map
+              Delivery Address
             </h3>
             
-            <div className="w-full h-[300px] border border-slate-200 rounded-md overflow-hidden">
-              <iframe 
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d5131882.799497933!2d5.979733705342818!3d51.08510257031399!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x479a721ec2b1be6b%3A0x75e85d6b8e91e55b!2sGermany!5e0!3m2!1sen!2sus!4v1652347851925!5m2!1sen!2sus" 
-                width="100%" 
-                height="100%" 
-                style={{ border: 0 }} 
-                allowFullScreen={false} 
-                loading="lazy" 
-                referrerPolicy="no-referrer-when-downgrade"
-                onLoad={() => setMapLoaded(true)}
-                title="Google Maps"
-              />
+            <div className="space-y-4">
+              <div className="space-y-2 relative">
+                <Label htmlFor="addressInput">Enter your address</Label>
+                <div className="relative">
+                  <Input
+                    id="addressInput"
+                    placeholder="Start typing your address..."
+                    value={singleAddressInput}
+                    onChange={handleInputChange}
+                    onFocus={() => singleAddressInput.length >= 3 && suggestions.length > 0 && setShowSuggestions(true)}
+                    className="pr-10"
+                    ref={inputRef}
+                  />
+                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                </div>
+                
+                {showSuggestions && (
+                  <div 
+                    ref={suggestionsRef}
+                    className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+                  >
+                    {suggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-slate-100 cursor-pointer text-sm"
+                        onClick={() => selectSuggestion(suggestion)}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {isValidAddress && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
+                    ✓ Valid address selected
+                  </div>
+                )}
+                
+                <p className="text-xs text-muted-foreground mt-1">
+                  Please select a suggestion from the dropdown after typing
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleAddressSubmit} 
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={!isValidAddress}
+              >
+                Continue
+              </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-2 text-center">
-              Click on the map to select your location
-            </p>
           </div>
         </div>
       </CardContent>
