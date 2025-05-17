@@ -25,7 +25,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('search');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   
   // Using API key from environment variables
   const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -240,7 +239,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         <div className="bg-white p-4 rounded-lg border border-blue-100 mb-6">
           <p className="text-sm text-blue-600 italic flex items-center justify-center">
             <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-            You only need to enter your address if it's not already in your profile
+            Enter your delivery address to get started
           </p>
         </div>
         
@@ -294,7 +293,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
           <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-200 h-[400px] md:h-auto">
             <h3 className="text-lg font-medium mb-4 flex items-center">
               <MapPin className="h-5 w-5 mr-2 text-primary" />
-              Select on Map
+              Delivery Address
             </h3>
             
             <div className="w-full h-[300px] border border-slate-200 rounded-md overflow-hidden">
@@ -306,13 +305,10 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 allowFullScreen={false} 
                 loading="lazy" 
                 referrerPolicy="no-referrer-when-downgrade"
-                onLoad={() => setMapLoaded(true)}
+                // onLoad={() => setMapLoaded(true)}
                 title="Google Maps"
               />
             </div>
-            <p className="text-sm text-muted-foreground mt-2 text-center">
-              Click on the map to select your location
-            </p>
           </div>
         </div>
       </CardContent>
