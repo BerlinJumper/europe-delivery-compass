@@ -98,7 +98,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     }
   };
 
-  // New function to parse manual address input
+  // Parse manual address input
   const parseAddressInput = (input: string) => {
     // Simple address parsing - you can enhance this later with your backend
     // For now, just set the street to the full input to allow continuing
@@ -120,7 +120,6 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     setIsValidAddress(true);
     
     // Parse the selected suggestion into address components
-    // In a real app, this would use a proper address parser or geocoding API
     const parts = suggestion.split(', ');
     if (parts.length >= 3) {
       const [street, cityWithPostal, country] = parts;
@@ -176,7 +175,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
         <div className="bg-white p-4 rounded-lg border border-blue-100 mb-6">
           <p className="text-sm text-blue-600 italic flex items-center justify-center">
             <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-            You only need to enter your address if it's not already in your profile
+            Enter your delivery address to get started
           </p>
         </div>
         
@@ -234,7 +233,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               
               <Button 
                 onClick={handleAddressSubmit}
-                className="w-full bg-primary hover:bg-primary/90"
+                className="w-full bg-[#002b5c] hover:bg-[#003d80] text-white"
                 disabled={!isValidAddress}
               >
                 Continue
