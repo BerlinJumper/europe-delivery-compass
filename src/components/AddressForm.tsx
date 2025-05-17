@@ -1,33 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Address } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { MapPin } from 'lucide-react';
+import { MapPin, Search } from 'lucide-react';
 import MapView from './MapView';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AddressFormProps {
   onAddressSubmit: (address: Address) => void;
 }
 
-const europeanCountries = [
-  "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
-  "Denmark", "Estonia", "Finland", "France", "Germany", "Greece",
-  "Hungary", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg",
-  "Malta", "Netherlands", "Poland", "Portugal", "Romania", "Slovakia",
-  "Slovenia", "Spain", "Sweden", "United Kingdom", "Switzerland", "Norway"
-];
-
 const AddressForm: React.FC<AddressFormProps> = ({ onAddressSubmit }) => {
+  const { toast } = useToast();
   const [address, setAddress] = useState<Address>({
     street: '',
     city: '',
@@ -36,64 +23,104 @@ const AddressForm: React.FC<AddressFormProps> = ({ onAddressSubmit }) => {
     coordinates: undefined
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [singleAddressInput, setSingleAddressInput] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isValidAddress, setIsValidAddress] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleChange = (field: keyof Address, value: string) => {
-    setAddress(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  // Mock suggestions - in a real app, these would come from a geocoding API
+  const mockSuggestions = [
+    "Friedrichstraße 123, 10117 Berlin, Germany",
+    "Alexanderplatz 1, 10178 Berlin, Germany",
+    "Kurfürstendamm 234, 10719 Berlin, Germany",
+    "Potsdamer Platz 5, 10785 Berlin, Germany",
+    "Unter den Linden 77, 10117 Berlin, Germany"
+  ];
+
+  useEffect(() => {
+    // Click outside to close suggestions
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current && 
+        !suggestionsRef.current.contains(event.target as Node) && 
+        inputRef.current && 
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSingleAddressInput(value);
     
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
+    // Only show suggestions when there's input and it's at least 3 characters
+    if (value.length >= 3) {
+      // Filter mock suggestions - in a real app, this would be an API call
+      const filtered = mockSuggestions.filter(
+        suggestion => suggestion.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+      setIsValidAddress(false);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setIsValidAddress(false);
     }
   };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+  const selectSuggestion = (suggestion: string) => {
+    setSingleAddressInput(suggestion);
+    setShowSuggestions(false);
+    setIsValidAddress(true);
     
-    if (!address.street.trim()) {
-      newErrors.street = 'Street address is required';
+    // Parse the selected suggestion into address components
+    // In a real app, this would use a proper address parser or geocoding API
+    const parts = suggestion.split(', ');
+    if (parts.length >= 3) {
+      const [street, cityWithPostal, country] = parts;
+      const postalCodeMatch = cityWithPostal.match(/(\d+)/);
+      const postalCode = postalCodeMatch ? postalCodeMatch[0] : '';
+      const city = cityWithPostal.replace(postalCode, '').trim();
+      
+      setAddress({
+        street,
+        city,
+        postalCode,
+        country,
+        coordinates: {
+          lat: 52.5200 + Math.random() * 0.01, // Mock coordinates for Berlin
+          lng: 13.4050 + Math.random() * 0.01
+        }
+      });
     }
-    
-    if (!address.city.trim()) {
-      newErrors.city = 'City is required';
-    }
-    
-    if (!address.postalCode.trim()) {
-      newErrors.postalCode = 'Postal code is required';
-    }
-    
-    if (!address.country) {
-      newErrors.country = 'Country is required';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (validateForm()) {
-      // For demonstration purposes, set mock coordinates
-      // In a real app, this would come from a geocoding service
-      const mockCoordinates = {
-        lat: 48.8566 + Math.random() * 0.01,
-        lng: 2.3522 + Math.random() * 0.01
-      };
+    if (isValidAddress) {
+      onAddressSubmit(address);
       
-      const addressWithCoordinates = {
-        ...address,
-        coordinates: mockCoordinates
-      };
-      
-      onAddressSubmit(addressWithCoordinates);
+      toast({
+        title: "Address submitted",
+        description: "Your delivery address has been saved",
+      });
+    } else {
+      toast({
+        title: "Invalid address",
+        description: "Please select an address from the suggestions",
+        variant: "destructive"
+      });
     }
   };
 
@@ -109,73 +136,54 @@ const AddressForm: React.FC<AddressFormProps> = ({ onAddressSubmit }) => {
               <h2 className="text-xl font-semibold ml-3">Delivery Address</h2>
             </div>
             
-            <div className="space-y-2">
-              <Label htmlFor="street">Street Address</Label>
-              <Input
-                id="street"
-                placeholder="Enter your street and number"
-                value={address.street}
-                onChange={(e) => handleChange('street', e.target.value)}
-                className={errors.street ? "border-destructive" : ""}
-              />
-              {errors.street && (
-                <p className="text-sm text-destructive">{errors.street}</p>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="city">City</Label>
+            <div className="space-y-2 relative">
+              <Label htmlFor="addressInput">Enter your address</Label>
+              <div className="relative">
                 <Input
-                  id="city"
-                  placeholder="City"
-                  value={address.city}
-                  onChange={(e) => handleChange('city', e.target.value)}
-                  className={errors.city ? "border-destructive" : ""}
+                  id="addressInput"
+                  placeholder="Start typing your address..."
+                  value={singleAddressInput}
+                  onChange={handleInputChange}
+                  onFocus={() => singleAddressInput.length >= 3 && setSuggestions.length > 0 && setShowSuggestions(true)}
+                  className="pr-10"
+                  ref={inputRef}
                 />
-                {errors.city && (
-                  <p className="text-sm text-destructive">{errors.city}</p>
-                )}
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="postalCode">Postal Code</Label>
-                <Input
-                  id="postalCode"
-                  placeholder="Postal code"
-                  value={address.postalCode}
-                  onChange={(e) => handleChange('postalCode', e.target.value)}
-                  className={errors.postalCode ? "border-destructive" : ""}
-                />
-                {errors.postalCode && (
-                  <p className="text-sm text-destructive">{errors.postalCode}</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Select 
-                value={address.country} 
-                onValueChange={(value) => handleChange('country', value)}
-              >
-                <SelectTrigger className={errors.country ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select a country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {europeanCountries.map(country => (
-                    <SelectItem key={country} value={country}>
-                      {country}
-                    </SelectItem>
+              {showSuggestions && (
+                <div 
+                  ref={suggestionsRef}
+                  className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+                >
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="px-4 py-2 hover:bg-slate-100 cursor-pointer text-sm"
+                      onClick={() => selectSuggestion(suggestion)}
+                    >
+                      {suggestion}
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-              {errors.country && (
-                <p className="text-sm text-destructive">{errors.country}</p>
+                </div>
               )}
+              
+              {isValidAddress && (
+                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
+                  ✓ Valid address selected
+                </div>
+              )}
+              
+              <p className="text-xs text-muted-foreground mt-1">
+                Please select a suggestion from the dropdown after typing
+              </p>
             </div>
             
-            <Button type="submit" className="w-full mt-6">
+            <Button 
+              type="submit" 
+              className="w-full mt-6"
+              disabled={!isValidAddress}
+            >
               Continue to Prescription
             </Button>
           </form>
