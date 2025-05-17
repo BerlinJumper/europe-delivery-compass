@@ -36,12 +36,28 @@ const Index: React.FC = () => {
   // Simulate default address for the user account - now we'll start with null
   const defaultAddress: Address | null = null;
 
-  const handleAddressSubmit = (submittedAddress: Address) => {
+  const handleAddressSubmit = (submittedAddress: Address, deliveryData?: DeliveryEstimate[]) => {
     setState(prev => ({
       ...prev,
       address: submittedAddress,
-      currentStep: 1 // Move to card scanning step
+      deliveryEstimates: deliveryData || null, // Store delivery estimates
+      currentStep: deliveryData ? 4 : 1, // Go directly to Delivery Comparison if we have data, otherwise continue normal flow
+      prescription: deliveryData ? null : prev.prescription, 
+      nonPrescriptionItems: deliveryData ? null : prev.nonPrescriptionItems,
+      medicationType: deliveryData ? null : prev.medicationType,
     }));
+
+    if (deliveryData) {
+      toast({
+        title: "Delivery Options Ready",
+        description: "Review your delivery options.",
+      });
+    } else {
+      toast({
+        title: "Address Saved",
+        description: "Please continue with your insurance card.",
+      });
+    }
   };
 
   const handleCardSubmit = (submittedCardDetails: any) => {
