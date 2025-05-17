@@ -41,12 +41,18 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   const [singleAddressInput, setSingleAddressInput] = useState('');
   const [isValidAddress, setIsValidAddress] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [lat, setLat] = useState(0);
+  const [lon, setLon] = useState(0);
   
   // Google Places Autocomplete integration
   const { ref: googleAutocompleteInputRef } = usePlacesWidget({
     apiKey: GOOGLE_MAPS_API_KEY,
     onPlaceSelected: (place) => {
-      console.log("Place selected:", place);
+      var lat = place.geometry?.location.lat();
+      var lon = place.geometry?.location.lng();
+      setLat(lat);
+      setLon(lon);
+      console.log("Place selected:", lat, lon);
       
       // Extract address components from the Google Place result
       if (place && place.address_components) {
@@ -109,7 +115,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   });
 
   const fetchDeliveryOptionsFromBackend = async (lat: number, lon: number) => {
-    const backendUrl = `https://integration-svc-679068944146.europe-west10.run.app/?lat=${lat}&lon=${lon}`;
+    const backendUrl = `https://europe-west10-cassini-hackathon-460110.cloudfunctions.net/get_user_location?lat=${lat}&lon=${lon}`;
     console.log("Calling backend:", backendUrl); // For debugging
 
     try {
@@ -183,8 +189,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       });
       try {
         const deliveryDataFromBackend = await fetchDeliveryOptionsFromBackend(
-          address.coordinates.lat,
-          address.coordinates.lng
+          lat,
+          lon
         );
         
         console.log("Simulated backend call successful, data (if any):", deliveryDataFromBackend);
