@@ -73,20 +73,45 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     const value = e.target.value;
     setSingleAddressInput(value);
     
-    // Only show suggestions when there's input and it's at least 3 characters
-    if (value.length >= 3) {
-      // Filter mock suggestions - in a real app, this would be an API call
-      const filtered = mockSuggestions.filter(
-        suggestion => suggestion.toLowerCase().includes(value.toLowerCase())
-      );
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
-      setIsValidAddress(false);
+    // Set the address as valid when there's any input
+    if (value.length >= 1) {
+      setIsValidAddress(true);
+      
+      // Simple address parsing for manual input
+      parseAddressInput(value);
+      
+      // Still show suggestions if they match
+      if (value.length >= 3) {
+        const filtered = mockSuggestions.filter(
+          suggestion => suggestion.toLowerCase().includes(value.toLowerCase())
+        );
+        setSuggestions(filtered);
+        setShowSuggestions(filtered.length > 0);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
       setIsValidAddress(false);
     }
+  };
+
+  // New function to parse manual address input
+  const parseAddressInput = (input: string) => {
+    // Simple address parsing - you can enhance this later with your backend
+    // For now, just set the street to the full input to allow continuing
+    setAddress({
+      street: input,
+      city: 'Unknown',
+      postalCode: '',
+      country: 'Germany',
+      coordinates: {
+        lat: 52.52 + Math.random() * 0.01, // Mock coordinates for Berlin
+        lng: 13.40 + Math.random() * 0.01
+      }
+    });
   };
 
   const selectSuggestion = (suggestion: string) => {
@@ -128,7 +153,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     } else {
       toast({
         title: "Invalid address",
-        description: "Please select an address from the suggestions",
+        description: "Please enter an address",
         variant: "destructive"
       });
     }
@@ -198,12 +223,12 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 
                 {isValidAddress && (
                   <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded text-green-800 text-sm">
-                    ✓ Valid address selected
+                    ✓ Address accepted
                   </div>
                 )}
                 
                 <p className="text-xs text-muted-foreground mt-1">
-                  Please select a suggestion from the dropdown after typing
+                  Enter any address or select a suggestion from the dropdown
                 </p>
               </div>
               
