@@ -118,6 +118,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   const handleAddressSubmit = () => {
     if (isValidAddress) {
+      // This is the critical part - make sure we're calling onAddressSubmit with the address
       onAddressSubmit(address);
       
       toast({
@@ -207,7 +208,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
               </div>
               
               <Button 
-                onClick={handleAddressSubmit} 
+                onClick={handleAddressSubmit}
                 className="w-full bg-primary hover:bg-primary/90"
                 disabled={!isValidAddress}
               >
