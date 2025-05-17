@@ -184,7 +184,7 @@ const AddressForm: React.FC<AddressFormProps> = ({ onAddressSubmit }) => {
               className="w-full mt-6"
               disabled={!isValidAddress}
             >
-              Continue to Prescription
+              Continue
             </Button>
           </form>
         </CardContent>
