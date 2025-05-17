@@ -11,7 +11,7 @@ import { usePlacesWidget } from "react-google-autocomplete";
 interface WelcomeScreenProps {
   onMedicationTypeSelect: (type: MedicationType) => void;
   onMedicationSearch: (query: string, isPrescription: boolean) => void;
-  onAddressSubmit: (address: Address) => void;
+  onAddressSubmit: (address: Address, deliveryData?: any) => void;
   defaultAddress?: Address | null;
 }
 
@@ -40,6 +40,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
 
   const [singleAddressInput, setSingleAddressInput] = useState('');
   const [isValidAddress, setIsValidAddress] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Google Places Autocomplete integration
   const { ref: googleAutocompleteInputRef } = usePlacesWidget({
@@ -107,18 +108,66 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     },
   });
 
-  const handleAddressSubmit = () => {
-    if (isValidAddress) {
-      onAddressSubmit(address);
+  const fetchDeliveryOptionsFromBackend = async (lat: number, lon: number) => {
+    const backendUrl = `https://integration-svc-679068944146.europe-west10.run.app/?lat=${lat}&lon=${lon}`;
+    console.log("Calling backend:", backendUrl); // For debugging
+
+    try {
+      const response = await fetch(backendUrl);
       
+      if (!response.ok) {
+        let errorPayload: any = { message: `Backend request failed with status ${response.status}` };
+        try {
+          // Try to parse as JSON, as many APIs return structured errors
+          errorPayload = await response.json();
+        } catch (e) {
+          // If not JSON, use the text content
+          errorPayload.rawText = await response.text();
+        }
+        console.error("Backend error response:", errorPayload);
+        throw new Error(errorPayload.message || `Backend request failed: ${errorPayload.rawText || response.statusText}`);
+      }
+      
+      const data = await response.json(); // Assuming backend returns JSON
+      console.log("Backend response data:", data);
+      return data; // This will likely be the array of DeliveryEstimate
+    } catch (error) {
+      console.error("Failed to fetch delivery options:", error);
+      // Propagate the error or return a specific error structure
+      throw error; 
+    }
+  };
+
+  const handleAddressSubmit = async () => {
+    if (isValidAddress && address.coordinates) {
+      setIsLoading(true);
       toast({
-        title: "Address saved",
-        description: "Your delivery address has been saved",
+        title: "Fetching Delivery Options",
+        description: "Please wait...",
       });
+      try {
+        const deliveryData = await fetchDeliveryOptionsFromBackend(
+          address.coordinates.lat,
+          address.coordinates.lng
+        );
+        
+        // Now, 'deliveryData' should be the estimates from your backend.
+        // We need to pass this data (and the address) up to Index.tsx.
+        onAddressSubmit(address, deliveryData);
+        
+      } catch (error) {
+        toast({
+          title: "Error Fetching Options",
+          description: "Could not retrieve delivery options. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       toast({
-        title: "Invalid address",
-        description: "Please select an address from the suggestions",
+        title: "Invalid Address or Missing Coordinates",
+        description: "Please select a valid address from the suggestions.",
         variant: "destructive"
       });
     }
@@ -183,9 +232,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                 <Button 
                   onClick={handleAddressSubmit} 
                   className="w-full bg-primary hover:bg-primary/90"
-                  disabled={!isValidAddress}
+                  disabled={!isValidAddress || isLoading}
                 >
-                  Continue to Card Scanning
+                  {isLoading ? "Fetching..." : "Get Delivery Options"}
                 </Button>
               </div>
             </div>
