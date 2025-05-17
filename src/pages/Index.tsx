@@ -40,8 +40,13 @@ const Index: React.FC = () => {
     setState(prev => ({
       ...prev,
       address: submittedAddress,
-      currentStep: 1 // Move to card scanning step
+      currentStep: 1, // Always continue normal flow to card scanning
     }));
+
+    toast({
+      title: "Address Saved",
+      description: "Please continue with your insurance card.",
+    });
   };
 
   const handleCardSubmit = (submittedCardDetails: any) => {
