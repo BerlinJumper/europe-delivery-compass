@@ -11,7 +11,7 @@ import { usePlacesWidget } from "react-google-autocomplete";
 interface WelcomeScreenProps {
   onMedicationTypeSelect: (type: MedicationType) => void;
   onMedicationSearch: (query: string, isPrescription: boolean) => void;
-  onAddressSubmit: (address: Address, deliveryData?: any) => void;
+  onAddressSubmit: (address: Address) => void;
   defaultAddress?: Address | null;
 }
 
@@ -178,32 +178,32 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
     if (isValidAddress && address.coordinates) {
       setIsLoading(true);
       toast({
-        title: "Fetching Delivery Options",
+        title: "Processing Address",
         description: "Please wait...",
       });
       try {
-        const deliveryData = await fetchDeliveryOptionsFromBackend(
+        const deliveryDataFromBackend = await fetchDeliveryOptionsFromBackend(
           address.coordinates.lat,
           address.coordinates.lng
         );
         
-        if (!deliveryData || deliveryData.length === 0) {
-          throw new Error("No delivery options returned");
-        }
+        console.log("Simulated backend call successful, data (if any):", deliveryDataFromBackend);
         
-        // Now, 'deliveryData' should be the estimates from your backend.
-        // We need to pass this data (and the address) up to Index.tsx.
-        onAddressSubmit(address, deliveryData);
+        // Only pass the address to onAddressSubmit
+        onAddressSubmit(address);
+        
+        toast({
+          title: "Address Confirmed",
+          description: "Proceeding to the next step.",
+        });
         
       } catch (error) {
-        console.error("Error in handleAddressSubmit:", error);
+        console.error("Error during backend call, but address is valid:", error);
         toast({
-          title: "Error Fetching Options",
-          description: "Could not retrieve delivery options. Please try again.",
-          variant: "destructive",
+          title: "Address Confirmed (Backend Note)",
+          description: "Proceeding, but there was an issue communicating with delivery service. Please check console.",
         });
-        // We can still submit the address without delivery data
-        // This will use the regular flow through the card scanning
+        // Still proceed with the confirmed address for the frontend flow
         onAddressSubmit(address);
       } finally {
         setIsLoading(false);
@@ -278,7 +278,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
                   className="w-full bg-primary hover:bg-primary/90"
                   disabled={!isValidAddress || isLoading}
                 >
-                  {isLoading ? "Fetching..." : "Get Delivery Options"}
+                  {isLoading ? "Processing..." : "Continue"}
                 </Button>
               </div>
             </div>
